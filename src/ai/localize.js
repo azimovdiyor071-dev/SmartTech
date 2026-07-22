@@ -327,6 +327,14 @@ const COUNTS = {
 }
 for (const l of ['en', 'uz', 'ru']) Object.assign(T[l], COUNTS[l])
 
+// "Who made you?" — always credits the developer.
+const IDENTITY = {
+  en: { identity: (v) => `🤖 I'm the **SmartTech CRM Assistant**, created and developed by **${v.by}**.` },
+  uz: { identity: (v) => `🤖 Men **SmartTech CRM Yordamchisi**man. Meni **${v.by}** yaratgan va ishlab chiqqan.` },
+  ru: { identity: (v) => `🤖 Я **ассистент SmartTech CRM**. Меня создал и разработал **${v.by}**.` },
+}
+for (const l of ['en', 'uz', 'ru']) Object.assign(T[l], IDENTITY[l])
+
 export function tt(lang, key, vars = {}) {
   const fn = T[lang]?.[key] || T.en[key]
   return typeof fn === 'function' ? fn(vars) : key

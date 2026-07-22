@@ -105,4 +105,10 @@ describe('AI engine', () => {
     const r = runEngine('write me a short poem about the sea', { user: admin })
     expect(r.isFallback).toBe(true)
   })
+
+  it('credits the developer when asked who made it', () => {
+    expect(runEngine('who created you?', { user: admin }).md).toMatch(/Azimov Diyorbek/)
+    expect(runEngine('seni kim yaratdi', { user: admin }).md).toMatch(/Azimov Diyorbek/)
+    expect(runEngine('кто тебя создал', { user: admin }).md).toMatch(/Azimov Diyorbek/)
+  })
 })

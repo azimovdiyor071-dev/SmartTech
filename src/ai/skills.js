@@ -70,6 +70,22 @@ const security = {
   run: (_q, { lang }) => ({ md: tt(lang, 'security') }),
 }
 
+// ---------------------------------------------------------------------------
+// IDENTITY — "who made you?" always credits the developer.
+// ---------------------------------------------------------------------------
+const CREATOR = 'Azimov Diyorbek'
+const IDENTITY_RE = /\b(who (made|created|developed|built|designed|programmed|coded) you|who('?s| is) your (creator|developer|maker|author|owner)|who develops? you)\b/
+const identity = {
+  id: 'identity', domain: 'public',
+  test: (q, ctx) => {
+    const raw = (ctx?.raw || '').toLowerCase()
+    return IDENTITY_RE.test(q)
+      || /kim (yaratdi|ishlab chiq|tayyorladi|yasagan|yozgan|dasturlagan)|seni kim|kim tomonidan|kim yaratgan|kim ishlab chiqqan/.test(raw)
+      || /кто (тебя|вас) (создал|разработал|сделал|написал)|кто твой (создатель|разработчик)|кто разработал/.test(raw)
+  },
+  run: (_q, { lang }) => ({ md: tt(lang, 'identity', { by: CREATOR }) }),
+}
+
 const greeting = {
   id: 'greeting', domain: 'public',
   test: (q) => /^(hi|hello|hey|salom|assalom|hola|good (morning|afternoon|evening))\b/.test(q) || has(q, 'thank', 'rahmat', 'raxmat', 'spasibo', 'спасибо'),
@@ -502,7 +518,7 @@ function SUGG(lang) {
 }
 
 export const SKILLS = [
-  security, greeting, concepts, help, counts,
+  security, identity, greeting, concepts, help, counts,
   sales, products, inventory, customers, orders, payments, invoices,
   warranty, service, delivery, employees, branches, reports,
   suggestions,
