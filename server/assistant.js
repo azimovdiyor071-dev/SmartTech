@@ -54,9 +54,8 @@ export async function askGemini(query, history = [], image = null) {
   if (!res.ok) {
     const detail = await res.text().catch(() => '')
     console.error('Gemini error', res.status, detail.slice(0, 300))
-    let reason = ''
-    try { reason = JSON.parse(detail)?.error?.message || '' } catch { reason = detail }
-    return { md: `⚠️ AI error (${res.status}). ${String(reason).slice(0, 160)}` }
+    const busy = res.status === 429
+    return { md: busy ? '⏳ The AI is busy right now. Please try again in a moment.' : '⚠️ The AI service is unavailable right now. Please try again shortly.' }
   }
 
   const data = await res.json().catch(() => null)
