@@ -470,7 +470,11 @@ a.mini-row:hover { background: var(--surface-2); }
 .ai-quick { display: flex; gap: 6px; overflow-x: auto; padding: 10px 14px; border-top: 1px solid var(--border); background: var(--surface); scrollbar-width: none; }
 .ai-quick::-webkit-scrollbar { display: none; }
 
-.ai-input { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--border); background: var(--surface); }
+.ai-msg-img { display: block; max-width: 100%; max-height: 220px; border-radius: 10px; margin-bottom: 8px; }
+.ai-attach { display: flex; align-items: center; gap: 8px; padding: 8px 14px 0; }
+.ai-attach img { width: 46px; height: 46px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+.ai-attach button { width: 24px; height: 24px; border-radius: 7px; border: none; background: var(--surface-3); color: var(--text-2); cursor: pointer; display: grid; place-items: center; }
+.ai-input { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--border); background: var(--surface); align-items: center; }
 .ai-input input { flex: 1; border: 1px solid var(--border-strong); border-radius: 12px; padding: 10px 13px; background: var(--surface-2); color: var(--text); font-size: 13.5px; outline: none; }
 .ai-input input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
 .ai-send { width: 42px; border-radius: 12px; border: none; background: var(--primary); color: #fff; cursor: pointer; display: grid; place-items: center; }

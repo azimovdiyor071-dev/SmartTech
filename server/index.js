@@ -21,8 +21,8 @@ app.use(helmet({ contentSecurityPolicy: false }))
 const allowed = process.env.CLIENT_ORIGIN?.split(',').map((s) => s.trim()).filter(Boolean)
 app.use(cors({ origin: allowed && allowed.length ? allowed : true }))
 
-// Body size limit.
-app.use(express.json({ limit: '1mb' }))
+// Body size limit (generous to allow base64 images sent to the AI).
+app.use(express.json({ limit: '12mb' }))
 
 // Rate limiting: a general cap, plus a stricter one on auth endpoints.
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 600, standardHeaders: true, legacyHeaders: false })
@@ -48,9 +48,10 @@ app.get('/api/auth/me', requireAuth, (req, res) => res.json({ user: publicUser(r
 
 // ---------- AI assistant (general questions via Gemini) ----------
 app.post('/api/assistant', requireAuth, wrap(async (req, res) => {
-  const { query, history } = req.body || {}
-  if (!query || !String(query).trim()) return res.status(400).json({ error: 'Empty query' })
-  res.json(await askGemini(String(query), Array.isArray(history) ? history : []))
+  const { query, history, image } = req.body || {}
+  const hasImage = image && image.data
+  if ((!query || !String(query).trim()) && !hasImage) return res.status(400).json({ error: 'Empty query' })
+  res.json(await askGemini(String(query || ''), Array.isArray(history) ? history : [], hasImage ? image : null))
 }))
 
 // ---------- bootstrap ----------

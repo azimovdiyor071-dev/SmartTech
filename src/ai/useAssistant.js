@@ -25,7 +25,9 @@ function load() {
 }
 
 const persist = (messages, memory) => {
-  try { localStorage.setItem(KEY, JSON.stringify({ messages: messages.slice(-40), memory })) } catch { /* ignore */ }
+  // Drop attached image previews before saving (avoid localStorage bloat).
+  const slim = messages.slice(-40).map((m) => (m.image ? { ...m, image: undefined } : m))
+  try { localStorage.setItem(KEY, JSON.stringify({ messages: slim, memory })) } catch { /* ignore */ }
 }
 
 const saved = load()
@@ -49,27 +51,33 @@ export const useAssistant = create((set, get) => ({
     persist(msgs, { lang })
   },
 
-  send: async (text) => {
+  send: async (text, image = null) => {
     const query = (text || '').trim()
-    if (!query || get().typing) return
+    if ((!query && !image) || get().typing) return
 
     const user = useAuth.getState().user || {}
     const appLang = useI18n.getState().lang
-    const userMsg = { id: nextId(), role: 'user', md: query }
+    const userMsg = { id: nextId(), role: 'user', md: query || '📷', image: image?.preview }
     set((s) => ({ messages: [...s.messages, userMsg], typing: true }))
 
     await new Promise((r) => setTimeout(r, 420))
 
     let answer
     try {
-      answer = await getProvider().generate({ query, user, memory: get().memory, appLang, history: get().messages })
-      // Hybrid: CRM questions answered locally; anything else → the real AI (Gemini).
-      if (answer.isFallback) {
-        try {
-          const history = get().messages.slice(-6).map((m) => ({ role: m.role, md: m.md }))
-          const ai = await api.post('/assistant', { query, history })
-          if (ai?.md) answer = { md: ai.md }
-        } catch { /* keep the local fallback message if the AI is unavailable */ }
+      if (image) {
+        // An image can't be handled locally — send straight to the vision AI.
+        const history = get().messages.slice(-6).map((m) => ({ role: m.role, md: m.md }))
+        answer = await api.post('/assistant', { query, history, image: { data: image.data, mimeType: image.mimeType } })
+      } else {
+        answer = await getProvider().generate({ query, user, memory: get().memory, appLang, history: get().messages })
+        // Hybrid: CRM questions answered locally; anything else → the real AI (Gemini).
+        if (answer.isFallback) {
+          try {
+            const history = get().messages.slice(-6).map((m) => ({ role: m.role, md: m.md }))
+            const ai = await api.post('/assistant', { query, history })
+            if (ai?.md) answer = { md: ai.md }
+          } catch { /* keep the local fallback message if the AI is unavailable */ }
+        }
       }
     } catch {
       answer = { md: '⚠️ Something went wrong. Please try again.' }

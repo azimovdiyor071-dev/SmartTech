@@ -18,15 +18,21 @@ guess, or state any specific business numbers. If the user asks about their own
 data, tell them to ask the CRM directly — for example: "how many customers",
 "today's sales", "low stock products" — and the system will answer accurately.`
 
-export async function askGemini(query, history = []) {
+export async function askGemini(query, history = [], image = null) {
   const key = process.env.GEMINI_API_KEY
   if (!key) {
     return { md: '🤖 The AI is not configured yet. An administrator needs to add a Gemini API key.' }
   }
 
+  // Current message parts — text plus an optional image (Gemini is multimodal).
+  const parts = [{ text: query || 'Describe this image.' }]
+  if (image?.data) {
+    parts.push({ inlineData: { mimeType: image.mimeType || 'image/jpeg', data: image.data } })
+  }
+
   const contents = [
     ...history.slice(-6).map((m) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: String(m.md || '') }] })),
-    { role: 'user', parts: [{ text: query }] },
+    { role: 'user', parts },
   ]
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`

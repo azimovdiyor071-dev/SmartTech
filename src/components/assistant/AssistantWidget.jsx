@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  Sparkles, X, Trash2, Copy, Send, Bot, Maximize2, Minimize2, Check,
+  Sparkles, X, Trash2, Copy, Send, Bot, Maximize2, Minimize2, Check, ImagePlus,
 } from 'lucide-react'
 import Markdown from './Markdown.jsx'
 import { useAssistant } from '../../ai/useAssistant.js'
@@ -44,17 +44,33 @@ export default function AssistantWidget() {
   const quickActions = QUICK_ACTIONS[lang] || QUICK_ACTIONS.en
   const [input, setInput] = useState('')
   const [copied, setCopied] = useState(null)
+  const [attached, setAttached] = useState(null) // { data, mimeType, preview }
   const bodyRef = useRef(null)
+  const fileRef = useRef(null)
 
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight
   }, [messages, typing, open])
 
+  const onPickImage = (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // allow re-selecting the same file
+    if (!file || !file.type.startsWith('image/')) return
+    if (file.size > 8 * 1024 * 1024) { push('Image too large (max 8MB).', 'error'); return }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const url = reader.result // data:image/...;base64,XXXX
+      setAttached({ data: String(url).split(',')[1], mimeType: file.type, preview: url })
+    }
+    reader.readAsDataURL(file)
+  }
+
   const submit = (e) => {
     e?.preventDefault()
-    if (!input.trim()) return
-    send(input)
+    if (!input.trim() && !attached) return
+    send(input, attached)
     setInput('')
+    setAttached(null)
   }
 
   const ask = (q) => send(q)
@@ -98,6 +114,7 @@ export default function AssistantWidget() {
           <div key={m.id} className={`ai-msg ${m.role}`}>
             {m.role === 'assistant' && <span className="ai-avatar sm"><Bot size={15} /></span>}
             <div className="ai-bubble">
+              {m.image && <img src={m.image} alt="attachment" className="ai-msg-img" />}
               <Markdown text={m.md} />
               {m.role === 'assistant' && m.id !== 'welcome' && (
                 <button className="ai-copy" onClick={() => copy(m)} title="Copy">
@@ -127,14 +144,23 @@ export default function AssistantWidget() {
         ))}
       </div>
 
+      {attached && (
+        <div className="ai-attach">
+          <img src={attached.preview} alt="to send" />
+          <button type="button" onClick={() => setAttached(null)} aria-label="Remove image"><X size={13} /></button>
+        </div>
+      )}
+
       <form className="ai-input" onSubmit={submit}>
+        <input ref={fileRef} type="file" accept="image/*" onChange={onPickImage} style={{ display: 'none' }} />
+        <button type="button" className="ai-icon" onClick={() => fileRef.current?.click()} title="Attach image" aria-label="Attach image"><ImagePlus size={18} /></button>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder={c.placeholder}
           aria-label="Message the assistant"
         />
-        <button type="submit" className="ai-send" disabled={!input.trim() || typing} aria-label="Send"><Send size={17} /></button>
+        <button type="submit" className="ai-send" disabled={(!input.trim() && !attached) || typing} aria-label="Send"><Send size={17} /></button>
       </form>
     </div>
   )
