@@ -1,0 +1,306 @@
+// Translation dictionaries. Keys fall back to English, then to the key itself.
+export const DICTS = {
+  en: {
+    'nav.main': 'Main',
+    'nav.sales': 'Sales',
+    'nav.operations': 'Operations',
+    'nav.organization': 'Organization',
+    'nav.system': 'System',
+    dashboard: 'Dashboard',
+    customers: 'Customers',
+    products: 'Products',
+    orders: 'Orders',
+    inventory: 'Inventory',
+    payments: 'Payments',
+    invoices: 'Invoices',
+    warranty: 'Warranty & Service',
+    delivery: 'Delivery',
+    employees: 'Employees',
+    branches: 'Branches',
+    reports: 'Reports',
+    notifications: 'Notifications',
+    settings: 'Settings',
+    search: 'Search anything…',
+    logout: 'Log out',
+    'dash.welcome': 'Welcome back',
+    'dash.subtitle': "Here's what's happening across your stores today.",
+    revenueToday: 'Revenue Today',
+    weeklyRevenue: 'Weekly Revenue',
+    monthlyRevenue: 'Monthly Revenue',
+    yearlyRevenue: 'Yearly Revenue',
+    netProfit: 'Net Profit',
+    expenses: 'Expenses',
+    ordersKpi: 'Orders',
+    productsSold: 'Products Sold',
+    avgOrderValue: 'Avg Order Value',
+    newCustomers: 'New Customers',
+    returningCustomers: 'Returning Customers',
+    activeCustomers: 'Active Customers',
+    vsYesterday: 'vs yesterday',
+    vsLastWeek: 'vs last week',
+    vsLastMonth: 'vs last month',
+    vsLastPeriod: 'vs last period',
+    todaysSales: "Today's Sales",
+    todaysOrders: "Today's Orders",
+    lowStockKpi: 'Low Stock',
+    salesChart: 'Sales (30 days)',
+    dashTasks: "Today's Tasks",
+    taskNewOrders: 'New Orders',
+    taskPendingPay: 'Pending Payments',
+    taskDeliveries: 'Deliveries',
+    taskWarranty: 'Warranty Expiring',
+    recentOrders: 'Recent Orders',
+    lowStockTitle: 'Low Stock',
+    viewAll: 'View all',
+    needRestock: 'need restocking',
+    total: 'Total',
+    all: 'All',
+    add: 'Add',
+    export: 'Export',
+    view: 'View',
+    edit: 'Edit',
+    status: 'Status',
+    actions: 'Actions',
+    noData: 'No records found',
+    noDataSub: 'Try adjusting your search or filters.',
+    save: 'Save', cancel: 'Cancel', saveChanges: 'Save changes', back: 'Back', print: 'Print', generate: 'Generate', connect: 'Connect', home: 'Home', showing: 'Showing', of: 'of', searchGeneric: 'Search…',
+    // login
+    signIn: 'Sign in', signInSub: 'Use the demo details below, or pick a role to explore.', emailLabel: 'Email', passwordLabel: 'Password', signInAs: 'Sign in as', forgotPassword: 'Forgot password?', resetSent: 'Password reset link sent (demo).', welcomeToast: 'Welcome back', heroTitle: 'Run your entire electronics retail business from one place.', feat1t: 'Real-time analytics', feat1d: 'Track sales, profit and stock across every branch.', feat2t: 'Fast operations', feat2d: 'Orders, inventory, service and delivery in one flow.', feat3t: 'Role-based access', feat3d: 'Fine-grained permissions for 9 staff roles.', rights: 'All rights reserved.',
+    // dashboard
+    last30: 'Last 30 days', reportExported: 'Report exported (demo).',
+    // customers
+    customersLower: 'customers', lifetimeValue: 'lifetime value', vipCustomers: 'VIP Customers', addCustomer: 'Add Customer', allSegments: 'All segments', customerProfile: 'Customer Profile', purchaseHistory: 'Purchase history', noOrdersYet: 'No orders yet.', joinedField: 'Joined', lastOrderField: 'Last order', cityBranchField: 'City / Branch', custSaved: 'Customer updated (demo).', custFormDemo: 'New customer form (demo).',
+    // products
+    skusAcross: 'SKUs across', categoriesWord: 'categories', addProduct: 'Add Product', totalSkus: 'Total SKUs', stockValueCost: 'Stock Value (cost)', lowOutStock: 'Low / Out of Stock', productDetails: 'Product Details', sellingPrice: 'Selling price', costPrice: 'Cost price', margin: 'Margin', stockQty: 'Stock quantity', reorderLevel: 'Reorder level', warrantyField: 'Warranty', variantsField: 'Variants', unitsSoldField: 'Units sold', months: 'months', prodSaved: 'Product updated (demo).', prodFormDemo: 'New product form (demo).', allCategories: 'All categories',
+    // orders
+    ordersRevenue: 'revenue', createOrder: 'Create Order', totalOrders: 'Total Orders', pendingStat: 'Pending', deliveredStat: 'Delivered', createOrderDemo: 'Create order flow (demo).', searchOrderCust: 'Search order # or customer…', allStatuses: 'All statuses',
+    // order detail
+    orderPlaced: 'Placed', invoicePdf: 'Invoice PDF', itemsWord: 'Items', subtotal: 'Subtotal', discount: 'Discount', taxLabel: 'Tax (12%)', customerCard: 'Customer', salesRep: 'Sales rep', deliveryCard: 'Delivery', orderDate: 'Order date', printingInvoice: 'Printing invoice… (demo)', invoiceExported: 'Invoice exported to PDF (demo).', orderNotFound: 'Order not found', orderNotExist: "This order doesn't exist", orderRemoved: 'It may have been removed.',
+    // inventory
+    invSubtitle: 'Warehouse stock levels, alerts and adjustments', stockTransfer: 'Stock Transfer', totalUnits: 'Total Units', lowStockStat: 'Low Stock', outStockStat: 'Out of Stock', stockAdded: 'Added to stock (demo).', stockRemoved: 'Removed from stock (demo).', searchInventory: 'Search inventory…', stockTransferDemo: 'Stock transfer created (demo).',
+    // payments
+    paymentsSub: 'transactions', totalCollected: 'Total Collected', transactionsStat: 'Transactions', partialPayments: 'Partial Payments', refundsStat: 'Refunds', searchPayments: 'Search payments…', allMethodsFilter: 'All methods',
+    // invoices
+    invoicesSub: 'invoices generated', generateInvoice: 'Generate Invoice', totalInvoiced: 'Total Invoiced', paidStat: 'Paid', unpaidStat: 'Unpaid', invoiceGenerated: 'Invoice generated (demo).', searchInvoices: 'Search invoices…', printingX: 'Printing', exportedPdf: 'exported to PDF (demo).',
+    // warranty
+    warrantySub: 'Warranty registrations, IMEI lookup and repair requests', warrantiesTab: 'Warranties', serviceTab: 'Service Requests', activeWarranties: 'Active Warranties', expiredStat: 'Expired', openServiceStat: 'Open Service Requests', searchImei: 'Search by IMEI, product, customer…', searchImeiIssue: 'Search by IMEI, issue, technician…',
+    // delivery
+    deliverySub: 'Courier assignments and delivery tracking', totalDeliveries: 'Total Deliveries', inTransitStat: 'In Transit', searchDeliveries: 'Search deliveries…',
+    // employees
+    employeesSub1: 'staff across', branchesWord: 'branches', rolesWord: 'roles', addEmployee: 'Add Employee', totalStaff: 'Total Staff', activeStat: 'Active', rolesStat: 'Roles', searchEmployees: 'Search employees…', addEmployeeDemo: 'Add employee form (demo).', allRoles: 'All roles',
+    // branches
+    branchesSub: 'store locations', topBranch: 'Top branch', staffLabel: 'Staff', perfVsTop: 'Performance vs top branch',
+    // reports
+    reportsSub: 'Generate and export business reports', dailyReport: 'Daily Report', weeklyReport: 'Weekly Report', monthlyReport: 'Monthly Report', yearlyReport: 'Yearly Report', dailyDesc: "Today's sales, orders and profit.", weeklyDesc: 'Last 7 days performance summary.', monthlyDesc: 'Full month breakdown by category.', yearlyDesc: 'Annual revenue and growth trends.', revenueTrend: 'Revenue Trend', last90: 'Last 90 days', auditLog: 'Audit & Activity Log', searchActivity: 'Search activity…', exportedAs: 'exported as',
+    // notifications
+    notifSub: 'unread', markAllRead: 'Mark all read', allCaught: "You're all caught up", noNotif: 'No new notifications.', allMarked: 'All notifications marked as read.',
+    // settings
+    settingsSub: 'Manage your company profile and system configuration', tabCompany: 'Company', tabLocalization: 'Localization', tabFinance: 'Finance & Tax', tabIntegrations: 'Integrations', tabSystem: 'System & API', companyProfile: 'Company Profile', companyName: 'Company name', supportEmail: 'Support email', website: 'Website', addressField: 'Address', interfaceLang: 'Interface language', timezone: 'Timezone', dateFormat: 'Date format', financeTax: 'Finance & Tax', currency: 'Currency', taxRate: 'VAT / Tax rate (%)', invoicePrefix: 'Invoice prefix', fiscalYear: 'Fiscal year start', notifChannels: 'Notification Channels', systemApi: 'System & API', apiKey: 'API Key', regenKey: 'Regenerate Key', backupNow: 'Backup Now', settingsSaved: 'Settings saved (demo).', connectedDemo: 'connected (demo).', keyGenerated: 'New API key generated (demo).', backupStarted: 'Backup started (demo).',
+    // forms / crud
+    deleteWord: 'Delete', created: 'Added', updated: 'Saved', deleted: 'Deleted', nameReq: 'Please enter a name.', titleReq: 'Please enter a title.', notesField: 'Notes', confirmDelete: 'Delete this record?', editCustomer: 'Edit Customer', editProduct: 'Edit Product', newOrder: 'New Order', selectCustomer: 'Select customer', addItem: 'Add item', quantity: 'Qty', discountPct: 'Discount %', orderItems: 'Order items', noItemsYet: 'No items added yet.', orderCreated: 'Order created', paymentStatusLabel: 'Payment status', invoiceThanks: 'Thank you for your business!', generatedBy: 'Generated by SmartTech CRM', popupBlocked: 'Please allow pop-ups to export as PDF.', downloaded: 'File downloaded',
+  },
+  uz: {
+    'nav.main': 'Asosiy',
+    'nav.sales': 'Savdo',
+    'nav.operations': 'Operatsiyalar',
+    'nav.organization': 'Tashkilot',
+    'nav.system': 'Tizim',
+    dashboard: 'Boshqaruv paneli',
+    customers: 'Mijozlar',
+    products: 'Mahsulotlar',
+    orders: 'Buyurtmalar',
+    inventory: 'Ombor',
+    payments: "To'lovlar",
+    invoices: 'Hisob-fakturalar',
+    warranty: 'Kafolat va Xizmat',
+    delivery: 'Yetkazib berish',
+    employees: 'Xodimlar',
+    branches: 'Filiallar',
+    reports: 'Hisobotlar',
+    notifications: 'Bildirishnomalar',
+    settings: 'Sozlamalar',
+    search: 'Qidirish…',
+    logout: 'Chiqish',
+    'dash.welcome': 'Xush kelibsiz',
+    'dash.subtitle': "Bugun do'konlaringizda nimalar bo'layotgani.",
+    revenueToday: 'Bugungi daromad',
+    weeklyRevenue: 'Haftalik daromad',
+    monthlyRevenue: 'Oylik daromad',
+    yearlyRevenue: 'Yillik daromad',
+    netProfit: 'Sof foyda',
+    expenses: 'Xarajatlar',
+    ordersKpi: 'Buyurtmalar',
+    productsSold: 'Sotilgan mahsulot',
+    avgOrderValue: "O'rtacha buyurtma",
+    newCustomers: 'Yangi mijozlar',
+    returningCustomers: 'Qaytgan mijozlar',
+    activeCustomers: 'Faol mijozlar',
+    vsYesterday: 'kechagiga nisbatan',
+    vsLastWeek: "o'tgan haftaga nisbatan",
+    vsLastMonth: "o'tgan oyga nisbatan",
+    vsLastPeriod: "o'tgan davrga nisbatan",
+    todaysSales: 'Bugungi savdo',
+    todaysOrders: 'Bugungi buyurtmalar',
+    lowStockKpi: 'Kam qoldiq',
+    salesChart: 'Savdo (30 kun)',
+    dashTasks: 'Bugungi vazifalar',
+    taskNewOrders: 'Yangi buyurtmalar',
+    taskPendingPay: "To'lov kutayotgan",
+    taskDeliveries: 'Yetkazishlar',
+    taskWarranty: 'Kafolat tugayapti',
+    recentOrders: "So'nggi buyurtmalar",
+    lowStockTitle: 'Kam qoldiq',
+    viewAll: 'Barchasi',
+    needRestock: "to'ldirish kerak",
+    total: 'Jami',
+    all: 'Barchasi',
+    add: "Qo'shish",
+    export: 'Eksport',
+    view: "Ko'rish",
+    edit: 'Tahrirlash',
+    status: 'Holat',
+    actions: 'Amallar',
+    noData: 'Yozuvlar topilmadi',
+    noDataSub: "Qidiruv yoki filtrlarni o'zgartiring.",
+    save: 'Saqlash', cancel: 'Bekor qilish', saveChanges: "O'zgarishlarni saqlash", back: 'Orqaga', print: 'Chop etish', generate: 'Yaratish', connect: 'Ulanish', home: 'Bosh sahifa', showing: "Ko'rsatilmoqda", of: '/', searchGeneric: 'Qidirish…',
+    // login
+    signIn: 'Kirish', signInSub: "Quyidagi demo ma'lumotlardan foydalaning yoki rol tanlang.", emailLabel: 'Email', passwordLabel: 'Parol', signInAs: 'Rol bilan kirish', forgotPassword: 'Parolni unutdingizmi?', resetSent: 'Parolni tiklash havolasi yuborildi (demo).', welcomeToast: 'Xush kelibsiz', heroTitle: "Butun elektronika biznesingizni bitta joydan boshqaring.", feat1t: 'Jonli tahlil', feat1d: 'Har bir filialda savdo, foyda va zaxirani kuzating.', feat2t: 'Tez operatsiyalar', feat2d: 'Buyurtma, ombor, xizmat va yetkazish bir oqimda.', feat3t: 'Rolga asoslangan kirish', feat3d: '9 ta xodim roli uchun aniq ruxsatlar.', rights: 'Barcha huquqlar himoyalangan.',
+    // dashboard
+    last30: "So'nggi 30 kun", reportExported: 'Hisobot eksport qilindi (demo).',
+    // customers
+    customersLower: 'mijoz', lifetimeValue: 'umumiy qiymat', vipCustomers: 'VIP mijozlar', addCustomer: "Mijoz qo'shish", allSegments: 'Barcha segmentlar', customerProfile: 'Mijoz profili', purchaseHistory: 'Xaridlar tarixi', noOrdersYet: "Hali buyurtma yo'q.", joinedField: "Qo'shilgan", lastOrderField: 'Oxirgi buyurtma', cityBranchField: 'Shahar / Filial', custSaved: 'Mijoz yangilandi (demo).', custFormDemo: "Yangi mijoz formasi (demo).",
+    // products
+    skusAcross: 'SKU,', categoriesWord: 'toifa', addProduct: "Mahsulot qo'shish", totalSkus: 'Jami SKU', stockValueCost: 'Zaxira qiymati (tannarx)', lowOutStock: 'Kam / Tugagan', productDetails: 'Mahsulot tafsilotlari', sellingPrice: 'Sotuv narxi', costPrice: 'Tannarx', margin: 'Foyda %', stockQty: 'Qoldiq miqdori', reorderLevel: 'Minimal daraja', warrantyField: 'Kafolat', variantsField: 'Variantlar', unitsSoldField: 'Sotilgan dona', months: 'oy', prodSaved: 'Mahsulot yangilandi (demo).', prodFormDemo: "Yangi mahsulot formasi (demo).", allCategories: 'Barcha toifalar',
+    // orders
+    ordersRevenue: 'daromad', createOrder: 'Buyurtma yaratish', totalOrders: 'Jami buyurtmalar', pendingStat: 'Kutilayotgan', deliveredStat: 'Yetkazilgan', createOrderDemo: 'Buyurtma yaratish (demo).', searchOrderCust: 'Buyurtma # yoki mijoz…', allStatuses: 'Barcha holatlar',
+    // order detail
+    orderPlaced: 'Berilgan', invoicePdf: 'Faktura PDF', itemsWord: 'Mahsulotlar', subtotal: 'Oraliq jami', discount: 'Chegirma', taxLabel: 'Soliq (12%)', customerCard: 'Mijoz', salesRep: 'Sotuvchi', deliveryCard: 'Yetkazish', orderDate: 'Buyurtma sanasi', printingInvoice: 'Faktura chop etilmoqda… (demo)', invoiceExported: 'Faktura PDF eksport qilindi (demo).', orderNotFound: 'Buyurtma topilmadi', orderNotExist: 'Bunday buyurtma mavjud emas', orderRemoved: "U o'chirilgan bo'lishi mumkin.",
+    // inventory
+    invSubtitle: "Ombor qoldiqlari, ogohlantirishlar va o'zgartirishlar", stockTransfer: 'Zaxira transferi', totalUnits: 'Jami donalar', lowStockStat: 'Kam qoldiq', outStockStat: 'Tugagan', stockAdded: "Zaxiraga qo'shildi (demo).", stockRemoved: 'Zaxiradan olindi (demo).', searchInventory: 'Omborni qidirish…', stockTransferDemo: 'Zaxira transferi yaratildi (demo).',
+    // payments
+    paymentsSub: 'tranzaksiya', totalCollected: "Jami yig'ilgan", transactionsStat: 'Tranzaksiyalar', partialPayments: "Qisman to'lovlar", refundsStat: 'Qaytarishlar', searchPayments: "To'lovlarni qidirish…", allMethodsFilter: 'Barcha usullar',
+    // invoices
+    invoicesSub: 'ta faktura yaratilgan', generateInvoice: 'Faktura yaratish', totalInvoiced: 'Jami hisoblangan', paidStat: "To'langan", unpaidStat: "To'lanmagan", invoiceGenerated: 'Faktura yaratildi (demo).', searchInvoices: 'Fakturalarni qidirish…', printingX: 'Chop etilmoqda', exportedPdf: 'PDF eksport qilindi (demo).',
+    // warranty
+    warrantySub: "Kafolat ro'yxati, IMEI qidiruvi va ta'mir so'rovlari", warrantiesTab: 'Kafolatlar', serviceTab: "Xizmat so'rovlari", activeWarranties: 'Faol kafolatlar', expiredStat: 'Muddati tugagan', openServiceStat: "Ochiq xizmat so'rovlari", searchImei: "IMEI, mahsulot, mijoz bo'yicha…", searchImeiIssue: "IMEI, muammo, usta bo'yicha…",
+    // delivery
+    deliverySub: 'Kuryer tayinlash va yetkazishni kuzatish', totalDeliveries: 'Jami yetkazishlar', inTransitStat: "Yo'lda", searchDeliveries: 'Yetkazishlarni qidirish…',
+    // employees
+    employeesSub1: 'xodim,', branchesWord: 'filial', rolesWord: 'rol', addEmployee: "Xodim qo'shish", totalStaff: 'Jami xodimlar', activeStat: 'Faol', rolesStat: 'Rollar', searchEmployees: 'Xodimlarni qidirish…', addEmployeeDemo: "Xodim qo'shish formasi (demo).", allRoles: 'Barcha rollar',
+    // branches
+    branchesSub: 'ta filial', topBranch: 'Eng yaxshi filial', staffLabel: 'Xodimlar', perfVsTop: 'Eng yaxshi filialga nisbatan',
+    // reports
+    reportsSub: 'Biznes hisobotlarini yaratish va eksport qilish', dailyReport: 'Kunlik hisobot', weeklyReport: 'Haftalik hisobot', monthlyReport: 'Oylik hisobot', yearlyReport: 'Yillik hisobot', dailyDesc: "Bugungi savdo, buyurtma va foyda.", weeklyDesc: "So'nggi 7 kunlik natijalar.", monthlyDesc: "To'liq oy bo'yicha taqsimot.", yearlyDesc: "Yillik daromad va o'sish.", revenueTrend: 'Daromad tendensiyasi', last90: "So'nggi 90 kun", auditLog: 'Audit va faollik jurnali', searchActivity: 'Faollikni qidirish…', exportedAs: 'eksport qilindi',
+    // notifications
+    notifSub: "o'qilmagan", markAllRead: "Hammasini o'qilgan deb belgilash", allCaught: 'Hammasi ko\'rildi', noNotif: "Yangi bildirishnoma yo'q.", allMarked: "Barcha bildirishnomalar o'qilgan deb belgilandi.",
+    // settings
+    settingsSub: 'Kompaniya profili va tizim sozlamalarini boshqaring', tabCompany: 'Kompaniya', tabLocalization: 'Til va mintaqa', tabFinance: 'Moliya va soliq', tabIntegrations: 'Integratsiyalar', tabSystem: 'Tizim va API', companyProfile: 'Kompaniya profili', companyName: 'Kompaniya nomi', supportEmail: 'Qo\'llab-quvvatlash email', website: 'Veb-sayt', addressField: 'Manzil', interfaceLang: 'Interfeys tili', timezone: 'Vaqt mintaqasi', dateFormat: 'Sana formati', financeTax: 'Moliya va soliq', currency: 'Valyuta', taxRate: 'QQS / Soliq stavkasi (%)', invoicePrefix: 'Faktura prefiksi', fiscalYear: 'Moliyaviy yil boshi', notifChannels: 'Bildirishnoma kanallari', systemApi: 'Tizim va API', apiKey: 'API kaliti', regenKey: 'Kalitni yangilash', backupNow: 'Zaxira nusxa', settingsSaved: 'Sozlamalar saqlandi (demo).', connectedDemo: 'ulandi (demo).', keyGenerated: 'Yangi API kaliti yaratildi (demo).', backupStarted: 'Zaxira boshlandi (demo).',
+    // forms / crud
+    deleteWord: "O'chirish", created: "Qo'shildi", updated: 'Saqlandi', deleted: "O'chirildi", nameReq: 'Iltimos, ism kiriting.', titleReq: 'Iltimos, nom kiriting.', notesField: 'Izohlar', confirmDelete: "Ushbu yozuv o'chirilsinmi?", editCustomer: 'Mijozni tahrirlash', editProduct: 'Mahsulotni tahrirlash', newOrder: 'Yangi buyurtma', selectCustomer: 'Mijozni tanlang', addItem: "Mahsulot qo'shish", quantity: 'Soni', discountPct: 'Chegirma %', orderItems: 'Buyurtma tarkibi', noItemsYet: "Hali mahsulot qo'shilmadi.", orderCreated: 'Buyurtma yaratildi', paymentStatusLabel: "To'lov holati", invoiceThanks: 'Xaridingiz uchun rahmat!', generatedBy: 'SmartTech CRM tomonidan yaratildi', popupBlocked: "PDF chiqarish uchun qalqib chiquvchi oynalarga ruxsat bering.", downloaded: 'Fayl yuklab olindi',
+  },
+  ru: {
+    'nav.main': 'Главное',
+    'nav.sales': 'Продажи',
+    'nav.operations': 'Операции',
+    'nav.organization': 'Организация',
+    'nav.system': 'Система',
+    dashboard: 'Панель',
+    customers: 'Клиенты',
+    products: 'Товары',
+    orders: 'Заказы',
+    inventory: 'Склад',
+    payments: 'Платежи',
+    invoices: 'Счета',
+    warranty: 'Гарантия и Сервис',
+    delivery: 'Доставка',
+    employees: 'Сотрудники',
+    branches: 'Филиалы',
+    reports: 'Отчёты',
+    notifications: 'Уведомления',
+    settings: 'Настройки',
+    search: 'Поиск…',
+    logout: 'Выйти',
+    'dash.welcome': 'С возвращением',
+    'dash.subtitle': 'Что происходит в ваших магазинах сегодня.',
+    revenueToday: 'Выручка за день',
+    weeklyRevenue: 'Выручка за неделю',
+    monthlyRevenue: 'Выручка за месяц',
+    yearlyRevenue: 'Выручка за год',
+    netProfit: 'Чистая прибыль',
+    expenses: 'Расходы',
+    ordersKpi: 'Заказы',
+    productsSold: 'Продано товаров',
+    avgOrderValue: 'Средний чек',
+    newCustomers: 'Новые клиенты',
+    returningCustomers: 'Вернувшиеся',
+    activeCustomers: 'Активные клиенты',
+    vsYesterday: 'ко вчера',
+    vsLastWeek: 'к прошлой неделе',
+    vsLastMonth: 'к прошлому месяцу',
+    vsLastPeriod: 'к прошлому периоду',
+    todaysSales: 'Продажи сегодня',
+    todaysOrders: 'Заказы сегодня',
+    lowStockKpi: 'Низкий остаток',
+    salesChart: 'Продажи (30 дней)',
+    dashTasks: 'Задачи на сегодня',
+    taskNewOrders: 'Новые заказы',
+    taskPendingPay: 'Ожидают оплаты',
+    taskDeliveries: 'Доставки',
+    taskWarranty: 'Гарантия истекает',
+    recentOrders: 'Последние заказы',
+    lowStockTitle: 'Низкий остаток',
+    viewAll: 'Все',
+    needRestock: 'нужно пополнить',
+    total: 'Всего',
+    all: 'Все',
+    add: 'Добавить',
+    export: 'Экспорт',
+    view: 'Просмотр',
+    edit: 'Изменить',
+    status: 'Статус',
+    actions: 'Действия',
+    noData: 'Записи не найдены',
+    noDataSub: 'Измените поиск или фильтры.',
+    save: 'Сохранить', cancel: 'Отмена', saveChanges: 'Сохранить изменения', back: 'Назад', print: 'Печать', generate: 'Создать', connect: 'Подключить', home: 'Главная', showing: 'Показано', of: 'из', searchGeneric: 'Поиск…',
+    // login
+    signIn: 'Войти', signInSub: 'Используйте демо-данные ниже или выберите роль.', emailLabel: 'Эл. почта', passwordLabel: 'Пароль', signInAs: 'Войти как', forgotPassword: 'Забыли пароль?', resetSent: 'Ссылка для сброса пароля отправлена (демо).', welcomeToast: 'С возвращением', heroTitle: 'Управляйте всем бизнесом электроники из одного места.', feat1t: 'Аналитика в реальном времени', feat1d: 'Продажи, прибыль и остатки по каждому филиалу.', feat2t: 'Быстрые операции', feat2d: 'Заказы, склад, сервис и доставка в одном потоке.', feat3t: 'Доступ по ролям', feat3d: 'Точные права для 9 ролей сотрудников.', rights: 'Все права защищены.',
+    // dashboard
+    last30: 'Последние 30 дней', reportExported: 'Отчёт экспортирован (демо).',
+    // customers
+    customersLower: 'клиентов', lifetimeValue: 'пожизненная ценность', vipCustomers: 'VIP-клиенты', addCustomer: 'Добавить клиента', allSegments: 'Все сегменты', customerProfile: 'Профиль клиента', purchaseHistory: 'История покупок', noOrdersYet: 'Заказов пока нет.', joinedField: 'Регистрация', lastOrderField: 'Последний заказ', cityBranchField: 'Город / Филиал', custSaved: 'Клиент обновлён (демо).', custFormDemo: 'Форма нового клиента (демо).',
+    // products
+    skusAcross: 'SKU в', categoriesWord: 'категориях', addProduct: 'Добавить товар', totalSkus: 'Всего SKU', stockValueCost: 'Стоимость остатка', lowOutStock: 'Мало / Нет в наличии', productDetails: 'Детали товара', sellingPrice: 'Цена продажи', costPrice: 'Себестоимость', margin: 'Маржа', stockQty: 'Количество на складе', reorderLevel: 'Минимальный уровень', warrantyField: 'Гарантия', variantsField: 'Варианты', unitsSoldField: 'Продано штук', months: 'мес.', prodSaved: 'Товар обновлён (демо).', prodFormDemo: 'Форма нового товара (демо).', allCategories: 'Все категории',
+    // orders
+    ordersRevenue: 'выручка', createOrder: 'Создать заказ', totalOrders: 'Всего заказов', pendingStat: 'В ожидании', deliveredStat: 'Доставлено', createOrderDemo: 'Создание заказа (демо).', searchOrderCust: 'Поиск № заказа или клиента…', allStatuses: 'Все статусы',
+    // order detail
+    orderPlaced: 'Оформлен', invoicePdf: 'Счёт PDF', itemsWord: 'Товары', subtotal: 'Подытог', discount: 'Скидка', taxLabel: 'Налог (12%)', customerCard: 'Клиент', salesRep: 'Продавец', deliveryCard: 'Доставка', orderDate: 'Дата заказа', printingInvoice: 'Печать счёта… (демо)', invoiceExported: 'Счёт экспортирован в PDF (демо).', orderNotFound: 'Заказ не найден', orderNotExist: 'Такого заказа нет', orderRemoved: 'Возможно, он был удалён.',
+    // inventory
+    invSubtitle: 'Остатки на складе, оповещения и корректировки', stockTransfer: 'Перемещение', totalUnits: 'Всего единиц', lowStockStat: 'Низкий остаток', outStockStat: 'Нет в наличии', stockAdded: 'Добавлено на склад (демо).', stockRemoved: 'Списано со склада (демо).', searchInventory: 'Поиск по складу…', stockTransferDemo: 'Перемещение создано (демо).',
+    // payments
+    paymentsSub: 'транзакций', totalCollected: 'Всего собрано', transactionsStat: 'Транзакции', partialPayments: 'Частичные оплаты', refundsStat: 'Возвраты', searchPayments: 'Поиск платежей…', allMethodsFilter: 'Все способы',
+    // invoices
+    invoicesSub: 'счетов создано', generateInvoice: 'Создать счёт', totalInvoiced: 'Всего выставлено', paidStat: 'Оплачено', unpaidStat: 'Не оплачено', invoiceGenerated: 'Счёт создан (демо).', searchInvoices: 'Поиск счетов…', printingX: 'Печать', exportedPdf: 'экспортирован в PDF (демо).',
+    // warranty
+    warrantySub: 'Регистрация гарантий, поиск по IMEI и заявки на ремонт', warrantiesTab: 'Гарантии', serviceTab: 'Заявки на сервис', activeWarranties: 'Активные гарантии', expiredStat: 'Истёкшие', openServiceStat: 'Открытые заявки', searchImei: 'Поиск по IMEI, товару, клиенту…', searchImeiIssue: 'Поиск по IMEI, проблеме, мастеру…',
+    // delivery
+    deliverySub: 'Назначение курьеров и отслеживание доставки', totalDeliveries: 'Всего доставок', inTransitStat: 'В пути', searchDeliveries: 'Поиск доставок…',
+    // employees
+    employeesSub1: 'сотрудников в', branchesWord: 'филиалах', rolesWord: 'ролей', addEmployee: 'Добавить сотрудника', totalStaff: 'Всего сотрудников', activeStat: 'Активные', rolesStat: 'Роли', searchEmployees: 'Поиск сотрудников…', addEmployeeDemo: 'Форма нового сотрудника (демо).', allRoles: 'Все роли',
+    // branches
+    branchesSub: 'магазинов', topBranch: 'Лучший филиал', staffLabel: 'Сотрудники', perfVsTop: 'Результат к лучшему филиалу',
+    // reports
+    reportsSub: 'Создание и экспорт бизнес-отчётов', dailyReport: 'Дневной отчёт', weeklyReport: 'Недельный отчёт', monthlyReport: 'Месячный отчёт', yearlyReport: 'Годовой отчёт', dailyDesc: 'Продажи, заказы и прибыль за сегодня.', weeklyDesc: 'Итоги за последние 7 дней.', monthlyDesc: 'Разбивка за месяц по категориям.', yearlyDesc: 'Годовая выручка и рост.', revenueTrend: 'Тренд выручки', last90: 'Последние 90 дней', auditLog: 'Журнал аудита и активности', searchActivity: 'Поиск по активности…', exportedAs: 'экспортирован как',
+    // notifications
+    notifSub: 'непрочитанных', markAllRead: 'Отметить все', allCaught: 'Всё прочитано', noNotif: 'Новых уведомлений нет.', allMarked: 'Все уведомления отмечены как прочитанные.',
+    // settings
+    settingsSub: 'Управляйте профилем компании и настройками системы', tabCompany: 'Компания', tabLocalization: 'Локализация', tabFinance: 'Финансы и налоги', tabIntegrations: 'Интеграции', tabSystem: 'Система и API', companyProfile: 'Профиль компании', companyName: 'Название компании', supportEmail: 'Email поддержки', website: 'Веб-сайт', addressField: 'Адрес', interfaceLang: 'Язык интерфейса', timezone: 'Часовой пояс', dateFormat: 'Формат даты', financeTax: 'Финансы и налоги', currency: 'Валюта', taxRate: 'НДС / Ставка налога (%)', invoicePrefix: 'Префикс счёта', fiscalYear: 'Начало фин. года', notifChannels: 'Каналы уведомлений', systemApi: 'Система и API', apiKey: 'API ключ', regenKey: 'Обновить ключ', backupNow: 'Резервная копия', settingsSaved: 'Настройки сохранены (демо).', connectedDemo: 'подключено (демо).', keyGenerated: 'Новый API ключ создан (демо).', backupStarted: 'Резервное копирование начато (демо).',
+    // forms / crud
+    deleteWord: 'Удалить', created: 'Добавлено', updated: 'Сохранено', deleted: 'Удалено', nameReq: 'Введите имя.', titleReq: 'Введите название.', notesField: 'Заметки', confirmDelete: 'Удалить эту запись?', editCustomer: 'Изменить клиента', editProduct: 'Изменить товар', newOrder: 'Новый заказ', selectCustomer: 'Выберите клиента', addItem: 'Добавить товар', quantity: 'Кол-во', discountPct: 'Скидка %', orderItems: 'Состав заказа', noItemsYet: 'Товары ещё не добавлены.', orderCreated: 'Заказ создан', paymentStatusLabel: 'Статус оплаты', invoiceThanks: 'Спасибо за покупку!', generatedBy: 'Сформировано SmartTech CRM', popupBlocked: 'Разрешите всплывающие окна для экспорта в PDF.', downloaded: 'Файл загружен',
+  },
+}
+
+export const LANGS = [
+  { code: 'en', label: 'EN' },
+  { code: 'uz', label: 'UZ' },
+  { code: 'ru', label: 'RU' },
+]

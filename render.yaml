@@ -1,0 +1,18 @@
+# Render Blueprint for the SmartTech CRM backend API.
+# In Render: New → Blueprint → pick this repo. Then set the secret env vars.
+services:
+  - type: web
+    name: smarttech-crm-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: node index.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false   # paste your Neon connection string in the dashboard
+      - key: JWT_SECRET
+        sync: false   # paste a long random string
+      - key: CLIENT_ORIGIN
+        sync: false   # your Vercel URL, e.g. https://smarttech-crm.vercel.app
