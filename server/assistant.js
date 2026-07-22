@@ -2,7 +2,7 @@
 // Only questions the local CRM engine can't answer reach here, so the
 // LLM handles open/general questions while CRM data stays accurate & local.
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+const MODEL = process.env.GEMINI_MODEL || 'gemini-flash-latest'
 
 const SYSTEM = `You are the SmartTech CRM Assistant — a friendly helper built into an
 electronics-retail CRM used by ordinary shop owners, managers and cashiers.
