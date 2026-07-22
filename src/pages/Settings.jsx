@@ -5,12 +5,17 @@ import { useI18n, useT } from '../i18n/useI18n.js'
 import { LANGS } from '../i18n/dictionaries.js'
 import { th } from '../i18n/labels.js'
 import { useToast } from '../stores/useToast.js'
+import { useCurrency, CURRENCIES } from '../stores/useCurrency.js'
+
+const CURRENCY_LABEL = { USD: 'USD ($)', UZS: "UZS (so'm)", RUB: 'RUB (₽)' }
 
 export default function Settings() {
   const push = useToast((s) => s.push)
   const { t } = useT()
   const lang = useI18n((s) => s.lang)
   const setLang = useI18n((s) => s.setLang)
+  const currency = useCurrency((s) => s.currency)
+  const setCurrency = useCurrency((s) => s.setCurrency)
   const [tab, setTab] = useState('company')
   const save = () => push(t('settingsSaved'), 'success')
 
@@ -67,7 +72,11 @@ export default function Settings() {
             <>
               <h3 style={{ fontSize: 16 }}>{t('financeTax')}</h3>
               <div className="grid grid-2" style={{ gap: 14 }}>
-                <div className="field"><label>{t('currency')}</label><select className="select"><option>USD ($)</option><option>UZS (soʻm)</option><option>EUR (€)</option></select></div>
+                <div className="field"><label>{t('currency')}</label>
+                  <select className="select" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                    {CURRENCIES.map((c) => <option key={c} value={c}>{CURRENCY_LABEL[c]}</option>)}
+                  </select>
+                </div>
                 <div className="field"><label>{t('taxRate')}</label><input className="input" type="number" defaultValue={12} /></div>
                 <div className="field"><label>{t('invoicePrefix')}</label><input className="input" defaultValue="INV-" /></div>
                 <div className="field"><label>{t('fiscalYear')}</label><select className="select"><option>January</option><option>April</option></select></div>

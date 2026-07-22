@@ -4,6 +4,7 @@ import GlobalSearch from './GlobalSearch.jsx'
 import { useTheme } from '../stores/useTheme.js'
 import { useAuth } from '../stores/useAuth.js'
 import { useI18n, useT } from '../i18n/useI18n.js'
+import { useCurrency, CURRENCIES } from '../stores/useCurrency.js'
 import { LANGS } from '../i18n/dictionaries.js'
 import { initials, colorFrom } from '../lib/format.js'
 import { useNotifications, selectUnread } from '../stores/useNotifications.js'
@@ -15,6 +16,8 @@ export default function Topbar({ onMenu }) {
   const { t } = useT()
   const lang = useI18n((s) => s.lang)
   const setLang = useI18n((s) => s.setLang)
+  const currency = useCurrency((s) => s.currency)
+  const setCurrency = useCurrency((s) => s.setCurrency)
   const unread = useNotifications(selectUnread)
 
   return (
@@ -24,6 +27,10 @@ export default function Topbar({ onMenu }) {
       <GlobalSearch />
 
       <div className="topbar-spacer" />
+
+      <select className="lang-select" value={currency} onChange={(e) => setCurrency(e.target.value)} aria-label="Currency">
+        {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+      </select>
 
       <select className="lang-select" value={lang} onChange={(e) => setLang(e.target.value)} aria-label="Language">
         {LANGS.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}

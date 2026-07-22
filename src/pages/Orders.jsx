@@ -77,8 +77,8 @@ export default function Orders() {
     setSaving(true)
     try {
       const order = await createOrder({ customerId, items, discountPct, paymentMethod: method, paymentStatus: payStatus })
-      addNotification({ type: 'order', title: t('orderCreated'), body: `${order.id} · ${order.customerName} · ${money(order.total)}` })
-      if (payStatus === 'Paid') addNotification({ type: 'payment', title: t('totalCollected'), body: `${order.id} · ${money(order.total)} · ${tPayment(lang, method)}` })
+      addNotification({ type: 'order', titleKey: 'notif.newOrder', body: `${order.id} · ${order.customerName} · ${money(order.total)}` })
+      if (payStatus === 'Paid') addNotification({ type: 'payment', titleKey: 'notif.payment', body: `${order.id} · ${money(order.total)} · ${tPayment(lang, method)}` })
       push(`${t('orderCreated')}: ${order.id}`, 'success')
       setOpen(false)
       navigate(`/orders/${order.id}`)

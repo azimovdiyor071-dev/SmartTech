@@ -286,12 +286,12 @@ export const DELIVERIES = ORDERS.filter((o) => ['Shipped', 'Delivered', 'Ready']
 
 // --- notifications ----------------------------------------------------------
 export const NOTIFICATIONS = [
-  { id: 'n1', type: 'order', title: 'New order received', body: 'ORD-10360 · iPhone 15 Pro ×1', time: daysAgoISO(0), read: false },
-  { id: 'n2', type: 'payment', title: 'Payment received', body: 'PAY-5042 · $1,240 via Payme', time: daysAgoISO(0), read: false },
-  { id: 'n3', type: 'stock', title: 'Low stock alert', body: 'Galaxy Buds2 Pro below reorder level', time: daysAgoISO(0), read: false },
-  { id: 'n4', type: 'warranty', title: 'Warranty expiring', body: '3 warranties expire this week', time: daysAgoISO(1), read: true },
-  { id: 'n5', type: 'service', title: 'Service completed', body: 'SRV-4012 · Screen replacement done', time: daysAgoISO(1), read: true },
-  { id: 'n6', type: 'order', title: 'Order delivered', body: 'ORD-10322 delivered to customer', time: daysAgoISO(2), read: true },
+  { id: 'n1', type: 'order', titleKey: 'notif.newOrder', bodyKey: 'notif.newOrderBody', time: daysAgoISO(0), read: false },
+  { id: 'n2', type: 'payment', titleKey: 'notif.payment', bodyKey: 'notif.paymentBody', time: daysAgoISO(0), read: false },
+  { id: 'n3', type: 'stock', titleKey: 'notif.lowStock', bodyKey: 'notif.lowStockBody', time: daysAgoISO(0), read: false },
+  { id: 'n4', type: 'warranty', titleKey: 'notif.warranty', bodyKey: 'notif.warrantyBody', time: daysAgoISO(1), read: true },
+  { id: 'n5', type: 'service', titleKey: 'notif.service', bodyKey: 'notif.serviceBody', time: daysAgoISO(1), read: true },
+  { id: 'n6', type: 'order', titleKey: 'notif.delivered', bodyKey: 'notif.deliveredBody', time: daysAgoISO(2), read: true },
 ]
 
 // --- activity / audit log ---------------------------------------------------

@@ -40,10 +40,10 @@ export default function Notifications() {
               <span className="stat-icon" style={{ width: 40, height: 40, background: bg, color: fg, flex: 'none' }}><cfg.icon size={18} /></span>
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                  <b style={{ fontSize: 14 }}>{n.title}</b>
+                  <b style={{ fontSize: 14 }}>{n.titleKey ? t(n.titleKey) : n.title}</b>
                   <span className="cell-muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{timeAgo(n.time)}</span>
                 </div>
-                <div className="cell-muted" style={{ fontSize: 13, marginTop: 2 }}>{n.body}</div>
+                <div className="cell-muted" style={{ fontSize: 13, marginTop: 2 }}>{n.bodyKey ? t(n.bodyKey) : n.body}</div>
               </div>
               {!n.read && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)', flex: 'none', marginTop: 6 }} />}
             </div>

@@ -7,12 +7,15 @@ import Toasts from '../components/ui/Toasts.jsx'
 import AssistantWidget from '../components/assistant/AssistantWidget.jsx'
 import { useAuth } from '../stores/useAuth.js'
 import { useCrmData } from '../stores/useCrmData.js'
+import { useCurrency } from '../stores/useCurrency.js'
 
 export default function AppLayout() {
   const user = useAuth((s) => s.user)
   const status = useCrmData((s) => s.status)
   const error = useCrmData((s) => s.error)
   const load = useCrmData((s) => s.load)
+  // Subscribe so the whole page subtree re-renders when the currency changes.
+  const currency = useCurrency((s) => s.currency)
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -22,7 +25,7 @@ export default function AppLayout() {
   if (!user) return <Navigate to="/login" replace />
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-currency={currency}>
       <Sidebar open={menuOpen} onNavigate={() => setMenuOpen(false)} />
       <div className="main-col">
         <Topbar onMenu={() => setMenuOpen((o) => !o)} />

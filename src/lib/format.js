@@ -1,22 +1,28 @@
 // Formatting helpers shared across the app.
+import { useCurrency } from '../stores/useCurrency.js'
 
-export function money(value, currency = 'USD') {
-  const n = Number(value) || 0
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: n % 1 === 0 ? 0 : 2,
-  }).format(n)
+// Base amounts are in USD; convert to the currently selected currency.
+function convert(value) {
+  const { currency, rates } = useCurrency.getState()
+  return { currency, n: (Number(value) || 0) * (rates[currency] || 1) }
 }
 
-export function compactMoney(value, currency = 'USD') {
-  const n = Number(value) || 0
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(n)
+export function money(value) {
+  const { currency, n } = convert(value)
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: n % 1 === 0 ? 0 : 2 }).format(n)
+  }
+  const num = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(Math.round(n))
+  return currency === 'RUB' ? `${num} ₽` : `${num} so'm`
+}
+
+export function compactMoney(value) {
+  const { currency, n } = convert(value)
+  if (currency === 'USD') {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(n)
+  }
+  const num = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(n)
+  return currency === 'RUB' ? `${num} ₽` : `${num} so'm`
 }
 
 export function number(value) {
