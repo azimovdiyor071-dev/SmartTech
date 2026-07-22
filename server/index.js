@@ -3,14 +3,18 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
+import { existsSync } from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
 import repo, { backendLabel } from './repo/index.js'
 import { requireAuth, register, login, publicUser } from './auth.js'
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
 const app = express()
 app.set('trust proxy', 1) // correct client IPs behind Render/Vercel proxies
 
-// Security headers.
-app.use(helmet())
+// Security headers. CSP disabled because we serve the SPA (inline styles) here.
+app.use(helmet({ contentSecurityPolicy: false }))
 
 // CORS: allow only the configured frontend origin(s) in production.
 const allowed = process.env.CLIENT_ORIGIN?.split(',').map((s) => s.trim()).filter(Boolean)
@@ -95,6 +99,16 @@ app.patch('/api/orders/:id', requireAuth, wrap(async (req, res) => {
   if (!o) return res.status(404).json({ error: 'Order not found' })
   res.json(o)
 }))
+
+// ---------- serve the built frontend (single-service deploy) ----------
+// When ../dist exists (production build), serve it and fall back to
+// index.html for any non-API route so client-side routing works.
+const clientDir = join(__dirname, '..', 'dist')
+if (existsSync(clientDir)) {
+  app.use(express.static(clientDir))
+  app.get(/^\/(?!api\/).*/, (_req, res) => res.sendFile(join(clientDir, 'index.html')))
+  console.log('🖥️  Serving frontend from /dist')
+}
 
 const PORT = process.env.PORT || 4000
 repo.init()
