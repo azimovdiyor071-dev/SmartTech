@@ -53,8 +53,10 @@ export async function askGemini(query, history = [], image = null) {
 
   if (!res.ok) {
     const detail = await res.text().catch(() => '')
-    console.error('Gemini error', res.status, detail.slice(0, 200))
-    return { md: '⚠️ The AI service returned an error. Please try again in a moment.' }
+    console.error('Gemini error', res.status, detail.slice(0, 300))
+    let reason = ''
+    try { reason = JSON.parse(detail)?.error?.message || '' } catch { reason = detail }
+    return { md: `⚠️ AI error (${res.status}). ${String(reason).slice(0, 160)}` }
   }
 
   const data = await res.json().catch(() => null)
