@@ -32,7 +32,7 @@ export default function Settings() {
     <div className="page">
       <PageHeader title={t('settings')} subtitle={t('settingsSub')} breadcrumb={[{ label: t('settings') }]} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 18, alignItems: 'start' }}>
+      <div className="settings-layout" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 18, alignItems: 'start' }}>
         <div className="card" style={{ padding: 8 }}>
           {TABS.map((tb) => (
             <button key={tb.id} className={`nav-item${tab === tb.id ? ' is-active' : ''}`} style={{ width: '100%' }} onClick={() => setTab(tb.id)}>

@@ -26,6 +26,7 @@ export default function AppLayout() {
 
   return (
     <div className="app-shell" data-currency={currency}>
+      {menuOpen && <div className="sidebar-backdrop" onClick={() => setMenuOpen(false)} />}
       <Sidebar open={menuOpen} onNavigate={() => setMenuOpen(false)} />
       <div className="main-col">
         <Topbar onMenu={() => setMenuOpen((o) => !o)} />
