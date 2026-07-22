@@ -8,9 +8,10 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
 dist-ssr
 *.local
+# NOTE: dist/ is committed on purpose so Render can serve the prebuilt
+# frontend without a build step. Rebuild with `npm run build` before pushing.
 
 # Secrets & local data — never commit these
 .env
