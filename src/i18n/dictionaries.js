@@ -65,7 +65,7 @@ export const DICTS = {
     noDataSub: 'Try adjusting your search or filters.',
     save: 'Save', cancel: 'Cancel', saveChanges: 'Save changes', back: 'Back', print: 'Print', generate: 'Generate', connect: 'Connect', home: 'Home', showing: 'Showing', of: 'of', searchGeneric: 'Search…',
     // login
-    signIn: 'Sign in', signInSub: 'Use the demo details below, or pick a role to explore.', emailLabel: 'Email', passwordLabel: 'Password', signInAs: 'Sign in as', forgotPassword: 'Forgot password?', resetSent: 'Password reset link sent.', welcomeToast: 'Welcome back', heroTitle: 'Run your entire electronics retail business from one place.', feat1t: 'Real-time analytics', feat1d: 'Track sales, profit and stock across every branch.', feat2t: 'Fast operations', feat2d: 'Orders, inventory, service and delivery in one flow.', feat3t: 'Role-based access', feat3d: 'Fine-grained permissions for 9 staff roles.', rights: 'All rights reserved.',
+    signIn: 'Sign in', signInSub: 'Enter your details, or pick a role to explore.', emailLabel: 'Email', passwordLabel: 'Password', signInAs: 'Sign in as', forgotPassword: 'Forgot password?', resetSent: 'Password reset link sent.', welcomeToast: 'Welcome back', heroTitle: 'Run your entire electronics retail business from one place.', feat1t: 'Real-time analytics', feat1d: 'Track sales, profit and stock across every branch.', feat2t: 'Fast operations', feat2d: 'Orders, inventory, service and delivery in one flow.', feat3t: 'Role-based access', feat3d: 'Fine-grained permissions for 9 staff roles.', rights: 'All rights reserved.',
     // dashboard
     last30: 'Last 30 days', reportExported: 'Report exported.',
     // customers
@@ -165,7 +165,7 @@ export const DICTS = {
     noDataSub: "Qidiruv yoki filtrlarni o'zgartiring.",
     save: 'Saqlash', cancel: 'Bekor qilish', saveChanges: "O'zgarishlarni saqlash", back: 'Orqaga', print: 'Chop etish', generate: 'Yaratish', connect: 'Ulanish', home: 'Bosh sahifa', showing: "Ko'rsatilmoqda", of: '/', searchGeneric: 'Qidirish…',
     // login
-    signIn: 'Kirish', signInSub: "Quyidagi demo ma'lumotlardan foydalaning yoki rol tanlang.", emailLabel: 'Email', passwordLabel: 'Parol', signInAs: 'Rol bilan kirish', forgotPassword: 'Parolni unutdingizmi?', resetSent: 'Parolni tiklash havolasi yuborildi.', welcomeToast: 'Xush kelibsiz', heroTitle: "Butun elektronika biznesingizni bitta joydan boshqaring.", feat1t: 'Jonli tahlil', feat1d: 'Har bir filialda savdo, foyda va zaxirani kuzating.', feat2t: 'Tez operatsiyalar', feat2d: 'Buyurtma, ombor, xizmat va yetkazish bir oqimda.', feat3t: 'Rolga asoslangan kirish', feat3d: '9 ta xodim roli uchun aniq ruxsatlar.', rights: 'Barcha huquqlar himoyalangan.',
+    signIn: 'Kirish', signInSub: "Ma'lumotlaringizni kiriting yoki rol tanlang.", emailLabel: 'Email', passwordLabel: 'Parol', signInAs: 'Rol bilan kirish', forgotPassword: 'Parolni unutdingizmi?', resetSent: 'Parolni tiklash havolasi yuborildi.', welcomeToast: 'Xush kelibsiz', heroTitle: "Butun elektronika biznesingizni bitta joydan boshqaring.", feat1t: 'Jonli tahlil', feat1d: 'Har bir filialda savdo, foyda va zaxirani kuzating.', feat2t: 'Tez operatsiyalar', feat2d: 'Buyurtma, ombor, xizmat va yetkazish bir oqimda.', feat3t: 'Rolga asoslangan kirish', feat3d: '9 ta xodim roli uchun aniq ruxsatlar.', rights: 'Barcha huquqlar himoyalangan.',
     // dashboard
     last30: "So'nggi 30 kun", reportExported: 'Hisobot eksport qilindi.',
     // customers
@@ -265,7 +265,7 @@ export const DICTS = {
     noDataSub: 'Измените поиск или фильтры.',
     save: 'Сохранить', cancel: 'Отмена', saveChanges: 'Сохранить изменения', back: 'Назад', print: 'Печать', generate: 'Создать', connect: 'Подключить', home: 'Главная', showing: 'Показано', of: 'из', searchGeneric: 'Поиск…',
     // login
-    signIn: 'Войти', signInSub: 'Используйте демо-данные ниже или выберите роль.', emailLabel: 'Эл. почта', passwordLabel: 'Пароль', signInAs: 'Войти как', forgotPassword: 'Забыли пароль?', resetSent: 'Ссылка для сброса пароля отправлена.', welcomeToast: 'С возвращением', heroTitle: 'Управляйте всем бизнесом электроники из одного места.', feat1t: 'Аналитика в реальном времени', feat1d: 'Продажи, прибыль и остатки по каждому филиалу.', feat2t: 'Быстрые операции', feat2d: 'Заказы, склад, сервис и доставка в одном потоке.', feat3t: 'Доступ по ролям', feat3d: 'Точные права для 9 ролей сотрудников.', rights: 'Все права защищены.',
+    signIn: 'Войти', signInSub: 'Введите данные или выберите роль.', emailLabel: 'Эл. почта', passwordLabel: 'Пароль', signInAs: 'Войти как', forgotPassword: 'Забыли пароль?', resetSent: 'Ссылка для сброса пароля отправлена.', welcomeToast: 'С возвращением', heroTitle: 'Управляйте всем бизнесом электроники из одного места.', feat1t: 'Аналитика в реальном времени', feat1d: 'Продажи, прибыль и остатки по каждому филиалу.', feat2t: 'Быстрые операции', feat2d: 'Заказы, склад, сервис и доставка в одном потоке.', feat3t: 'Доступ по ролям', feat3d: 'Точные права для 9 ролей сотрудников.', rights: 'Все права защищены.',
     // dashboard
     last30: 'Последние 30 дней', reportExported: 'Отчёт экспортирован.',
     // customers
