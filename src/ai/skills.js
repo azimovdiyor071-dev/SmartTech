@@ -6,12 +6,9 @@
 // Engine picks the first matching skill after a permission check.
 // ============================================================
 import {
-  PRODUCTS, CUSTOMERS, ORDERS, PAYMENTS, INVOICES, WARRANTIES,
-  SERVICE_REQUESTS, DELIVERIES, CATEGORIES, DAILY,
+  WARRANTIES, SERVICE_REQUESTS, DELIVERIES, CATEGORIES, DAILY, BRANCHES,
 } from '../data/db.js'
-import {
-  getKpis, getTopProducts, getTopEmployees, getBranchComparison, getLowStock,
-} from '../data/analytics.js'
+import { getKpis } from '../data/analytics.js'
 import { money, number, formatDate } from '../lib/format.js'
 import { has, extractBrand, extractCategory, extractAmount, extractComparator, isRefinement, extractColor, mdTable } from './nlu.js'
 import { extractSearchTerm } from './lang.js'
@@ -24,6 +21,12 @@ const catLoc = (lang, id) => cLabel(lang, id, CATEGORIES.find((c) => c.id === id
 const pct = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`
 const arrow = (n) => (n >= 0 ? '📈' : '📉')
 const todayRow = () => DAILY[DAILY.length - 1]
+
+// Live data (from the backend-backed store) so the AI matches what the app shows.
+const live = () => useCrmData.getState()
+const isToday = (iso) => { try { return new Date(iso).toDateString() === new Date().toDateString() } catch { return false } }
+const liveLowStock = () => live().products.filter((p) => p.stock <= p.reorderLevel).sort((a, b) => a.stock - b.stock)
+const liveTopProducts = (n) => [...live().products].sort((a, b) => b.sold - a.sold).slice(0, n).map((p) => ({ ...p, revenue: Math.round(p.sold * p.price) }))
 
 const CMP_WORD = {
   en: { gt: 'more than', lt: 'less than' },
@@ -167,7 +170,7 @@ const sales = {
 
 // ---------------------------------------------------------------------------
 function applyProductFilters(f) {
-  let out = PRODUCTS
+  let out = live().products
   if (f.brand) out = out.filter((p) => p.brand.toLowerCase() === f.brand.toLowerCase())
   if (f.category) out = out.filter((p) => p.category === f.category)
   if (f.inStock === true) out = out.filter((p) => p.stock > 0)
@@ -189,7 +192,7 @@ const products = {
   },
   run: (q, { memory, lang, raw }) => {
     if (has(q, 'best', 'top selling', 'best selling', 'most sold', 'popular')) {
-      const top = getTopProducts(8)
+      const top = liveTopProducts(8)
       return { md: tt(lang, 'products.top', { table: mdTable(H(lang, ['product', 'brand', 'sold', 'revenue']), top.map((p) => [p.name, p.brand, `${p.sold}`, money(p.revenue)])) }), memory: { lastDomain: 'products', productFilters: {} } }
     }
 
@@ -228,10 +231,10 @@ const inventory = {
   test: (q) => has(q, 'low stock', 'running out', 'out of stock', 'reorder', 'inventory', 'restock', 'remaining'),
   run: (q, { lang }) => {
     if (has(q, 'out of stock')) {
-      const out = PRODUCTS.filter((p) => p.stock === 0)
+      const out = live().products.filter((p) => p.stock === 0)
       return { md: tt(lang, 'inventory.out', { count: out.length, table: mdTable(H(lang, ['product', 'category', 'status']), out.slice(0, 10).map((p) => [p.name, catLoc(lang, p.category), sLabel(lang, p.status)])) }) }
     }
-    const low = getLowStock()
+    const low = liveLowStock()
     const table = mdTable(H(lang, ['product', 'stock', 'reorder', 'status']), low.slice(0, 10).map((p) => [p.name, `${p.stock}`, `${p.reorderLevel}`, sLabel(lang, p.status)]))
     return { md: tt(lang, 'inventory.low', { count: low.length, table }), memory: { lastDomain: 'inventory' } }
   },
@@ -242,29 +245,29 @@ const customers = {
   id: 'customers', domain: 'customers',
   test: (q) => has(q, 'customer', 'client', 'buyer', 'vip', 'loyalty', 'retention', 'active customers', 'new customers', 'returning'),
   run: (q, { lang, raw }) => {
-    const k = getKpis()
-    if (has(q, 'active customers')) return { md: tt(lang, 'customers.active', { v: number(k.active), total: number(k.totalCustomers) }) }
-    if (has(q, 'new customers')) return { md: tt(lang, 'customers.new', { v: number(k.newCustomers) }) }
-    if (has(q, 'returning', 'retention')) return { md: tt(lang, 'customers.returning', { v: number(k.returning) }) }
+    const cust = live().customers
+    if (has(q, 'active customers')) return { md: tt(lang, 'customers.active', { v: number(cust.filter((c) => c.status === 'Active').length), total: number(cust.length) }) }
+    if (has(q, 'new customers')) return { md: tt(lang, 'customers.new', { v: number(cust.filter((c) => Date.now() - new Date(c.joined) < 30 * 86400000).length) }) }
+    if (has(q, 'returning', 'retention')) return { md: tt(lang, 'customers.returning', { v: number(cust.filter((c) => c.orders > 1).length) }) }
 
     const cmp = extractComparator(q); const amt = extractAmount(q)
     if (cmp && amt) {
-      const list = CUSTOMERS.filter((c) => (cmp === 'gt' ? c.totalSpent > amt : c.totalSpent < amt)).sort((a, b) => b.totalSpent - a.totalSpent)
+      const list = cust.filter((c) => (cmp === 'gt' ? c.totalSpent > amt : c.totalSpent < amt)).sort((a, b) => b.totalSpent - a.totalSpent)
       const table = mdTable(H(lang, ['customer', 'city', 'segment', 'spent', 'orders']), list.slice(0, 8).map((c) => [c.name, c.city, sLabel(lang, c.segment), money(c.totalSpent), `${c.orders}`]))
       return { md: tt(lang, 'customers.spent', { count: list.length, cmp: cmpWord(lang, cmp), amount: money(amt), table }), memory: { lastDomain: 'customers' } }
     }
     if (has(q, 'find', 'search')) {
       const term = extractSearchTerm(raw)
-      const list = CUSTOMERS.filter((c) => c.name.toLowerCase().includes(term) || c.email.toLowerCase().includes(term))
+      const list = cust.filter((c) => c.name.toLowerCase().includes(term) || (c.email || '').toLowerCase().includes(term))
       if (!term || !list.length) return { md: tt(lang, 'customers.searchNone', { term: term || '—' }) }
       const table = mdTable(H(lang, ['customer', 'phone', 'segment', 'spent']), list.slice(0, 8).map((c) => [c.name, c.phone, sLabel(lang, c.segment), money(c.totalSpent)]))
       return { md: tt(lang, 'customers.search', { count: list.length, term, table }) }
     }
     if (has(q, 'vip')) {
-      const vip = CUSTOMERS.filter((c) => c.segment === 'VIP').sort((a, b) => b.totalSpent - a.totalSpent)
+      const vip = cust.filter((c) => c.segment === 'VIP').sort((a, b) => b.totalSpent - a.totalSpent)
       return { md: tt(lang, 'customers.vip', { count: vip.length, table: mdTable(H(lang, ['customer', 'spent', 'loyalty']), vip.slice(0, 8).map((c) => [c.name, money(c.totalSpent), number(c.loyaltyPoints)])) }) }
     }
-    const top = [...CUSTOMERS].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 8)
+    const top = [...cust].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 8)
     return { md: tt(lang, 'customers.top', { table: mdTable(H(lang, ['customer', 'segment', 'spent', 'orders']), top.map((c) => [c.name, sLabel(lang, c.segment), money(c.totalSpent), `${c.orders}`])) }), memory: { lastDomain: 'customers' } }
   },
 }
@@ -274,30 +277,35 @@ const orders = {
   id: 'orders', domain: 'orders',
   test: (q) => has(q, 'order', 'orders'),
   run: (q, { lang, raw }) => {
+    const ord = live().orders
     const idMatch = raw.match(/#?\s?(\d{3,})/)
     if ((has(q, 'find', 'search') || raw.includes('#')) && idMatch) {
-      const found = ORDERS.find((o) => o.id.includes(idMatch[1]))
+      const found = ord.find((o) => o.id.includes(idMatch[1]))
       if (!found) return { md: tt(lang, 'orders.notFound', { digits: idMatch[1] }) }
       return { md: tt(lang, 'orders.found', { id: found.id, customer: found.customerName, total: money(found.total), status: sLabel(lang, found.status), payment: sLabel(lang, found.paymentStatus), date: formatDate(found.createdAt) }) }
     }
-    if (has(q, 'how many', 'count', 'today')) return { md: tt(lang, 'orders.today', { v: number(todayRow().orders), total: number(ORDERS.length) }) }
+    if (has(q, 'how many', 'count', 'today')) return { md: tt(lang, 'orders.today', { v: number(ord.filter((o) => isToday(o.createdAt)).length), total: number(ord.length) }) }
     if (has(q, 'awaiting payment', 'pending payment', 'unpaid')) {
-      const list = ORDERS.filter((o) => o.paymentStatus !== 'Paid' && o.status !== 'Cancelled')
+      const list = ord.filter((o) => o.paymentStatus !== 'Paid' && o.status !== 'Cancelled')
       return { md: tt(lang, 'orders.awaiting', { count: list.length, table: mdTable(H(lang, ['order', 'customer', 'total', 'payment']), list.slice(0, 10).map((o) => [o.id, o.customerName, money(o.total), sLabel(lang, o.paymentStatus)])) }), memory: { lastDomain: 'orders' } }
     }
     if (has(q, 'cancelled')) {
-      const list = ORDERS.filter((o) => o.status === 'Cancelled')
+      const list = ord.filter((o) => o.status === 'Cancelled')
       return { md: tt(lang, 'orders.cancelled', { count: list.length, table: mdTable(H(lang, ['order', 'customer', 'total']), list.slice(0, 10).map((o) => [o.id, o.customerName, money(o.total)])) }) }
     }
     if (has(q, 'refund')) {
-      const list = ORDERS.filter((o) => o.status === 'Refunded')
+      const list = ord.filter((o) => o.status === 'Refunded')
       return { md: tt(lang, 'orders.refund', { count: list.length, amount: money(list.reduce((s, o) => s + o.total, 0)) }) }
     }
+    if (has(q, 'delivered', 'completed')) {
+      const list = ord.filter((o) => o.status === 'Delivered')
+      return { md: tt(lang, 'orders.recent', { table: mdTable(H(lang, ['order', 'customer', 'status', 'total']), list.slice(0, 10).map((o) => [o.id, o.customerName, sLabel(lang, o.status), money(o.total)])) }), memory: { lastDomain: 'orders' } }
+    }
     if (has(q, 'pending', 'processing', 'preparing')) {
-      const list = ORDERS.filter((o) => ['New', 'Confirmed', 'Preparing', 'Ready'].includes(o.status))
+      const list = ord.filter((o) => ['New', 'Confirmed', 'Preparing', 'Ready'].includes(o.status))
       return { md: tt(lang, 'orders.pending', { count: list.length, table: mdTable(H(lang, ['order', 'customer', 'status', 'total']), list.slice(0, 10).map((o) => [o.id, o.customerName, sLabel(lang, o.status), money(o.total)])) }), memory: { lastDomain: 'orders' } }
     }
-    const recent = ORDERS.slice(0, 8)
+    const recent = ord.slice(0, 8)
     return { md: tt(lang, 'orders.recent', { table: mdTable(H(lang, ['order', 'customer', 'status', 'total']), recent.map((o) => [o.id, o.customerName, sLabel(lang, o.status), money(o.total)])) }), memory: { lastDomain: 'orders' } }
   },
 }
@@ -307,12 +315,15 @@ const payments = {
   id: 'payments', domain: 'payments',
   test: (q) => has(q, 'payment', 'paid', 'collected', 'transaction'),
   run: (q, { lang }) => {
+    // Payments derive from live orders (mirrors the Payments page).
+    const pays = live().orders.filter((o) => o.paymentStatus !== 'Pending')
+      .map((o) => ({ id: `PAY-${o.id.replace(/\D/g, '')}`, orderId: o.id, amount: o.paymentStatus === 'Partial' ? Math.round(o.total * 50) / 100 : o.total, status: o.paymentStatus }))
     if (has(q, 'pending', 'partial', 'awaiting')) {
-      const list = PAYMENTS.filter((p) => p.status !== 'Paid')
+      const list = pays.filter((p) => p.status !== 'Paid')
       return { md: tt(lang, 'payments.pending', { count: list.length, table: mdTable(H(lang, ['payment', 'order', 'amount', 'status']), list.slice(0, 10).map((p) => [p.id, p.orderId, money(p.amount), sLabel(lang, p.status)])) }) }
     }
-    const collected = PAYMENTS.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0)
-    return { md: tt(lang, 'payments.summary', { collected: money(collected), count: PAYMENTS.length, refunds: PAYMENTS.filter((p) => p.status === 'Refunded').length }) }
+    const collected = pays.filter((p) => p.status === 'Paid').reduce((s, p) => s + p.amount, 0)
+    return { md: tt(lang, 'payments.summary', { collected: money(collected), count: pays.length, refunds: pays.filter((p) => p.status === 'Refunded').length }) }
   },
 }
 
@@ -320,11 +331,13 @@ const invoices = {
   id: 'invoices', domain: 'invoices',
   test: (q) => has(q, 'invoice', 'billing'),
   run: (q, { lang }) => {
+    // Invoices derive from live orders (mirrors the Invoices page).
+    const invs = live().orders.map((o) => ({ id: `INV-${o.id.replace(/\D/g, '')}`, customerName: o.customerName, amount: o.total, status: o.paymentStatus === 'Paid' ? 'Paid' : 'Unpaid' }))
     if (has(q, 'unpaid', 'overdue', 'outstanding')) {
-      const list = INVOICES.filter((i) => i.status !== 'Paid')
+      const list = invs.filter((i) => i.status !== 'Paid')
       return { md: tt(lang, 'invoices.unpaid', { count: list.length, amount: money(list.reduce((s, i) => s + i.amount, 0)), table: mdTable(H(lang, ['invoice', 'customer', 'amount']), list.slice(0, 10).map((i) => [i.id, i.customerName, money(i.amount)])) }) }
     }
-    return { md: tt(lang, 'invoices.summary', { count: INVOICES.length, paid: INVOICES.filter((i) => i.status === 'Paid').length }) }
+    return { md: tt(lang, 'invoices.summary', { count: invs.length, paid: invs.filter((i) => i.status === 'Paid').length }) }
   },
 }
 
@@ -366,7 +379,8 @@ const employees = {
   test: (q) => has(q, 'employee', 'staff', 'payroll', 'worker', 'hr '),
   run: (q, { lang }) => {
     if (has(q, 'payroll', 'salary')) return { md: tt(lang, 'employees.payroll') }
-    const top = getTopEmployees(5)
+    if (has(q, 'how many', 'count', 'number of')) return { md: tt(lang, 'count.employees', { n: number(live().employees.length) }) }
+    const top = [...live().employees].filter((e) => e.sales).sort((a, b) => b.sales - a.sales).slice(0, 5)
     return { md: tt(lang, 'employees.top', { table: mdTable(H(lang, ['employee', 'role', 'sales']), top.map((e) => [e.name, e.role, money(e.sales)])) }), memory: { lastDomain: 'employees' } }
   },
 }
@@ -375,7 +389,11 @@ const branches = {
   id: 'branches', domain: 'branches',
   test: (q) => has(q, 'branch', 'store', 'location'),
   run: (_q, { lang }) => {
-    const stats = getBranchComparison()
+    const ord = live().orders; const emps = live().employees
+    const stats = BRANCHES.map((b) => {
+      const bo = ord.filter((o) => o.branch === b.id)
+      return { id: b.id, label: b.name, city: b.city, revenue: Math.round(bo.reduce((s, o) => s + o.total, 0)), orders: bo.length, employees: emps.filter((e) => e.branch === b.id).length }
+    }).sort((a, b) => b.revenue - a.revenue)
     const rows = stats.map((b, i) => [`${i === 0 ? '🥇 ' : ''}${b.label}`, b.city, `${b.orders}`, money(b.revenue)])
     return { md: tt(lang, 'branches.comparison', { table: mdTable(H(lang, ['branch', 'city', 'orders', 'revenue']), rows), top: stats[0].label }), memory: { lastDomain: 'branches' } }
   },
@@ -393,7 +411,7 @@ const reports = {
       [revenueH, money(k.monthly.value)],
       [profitH, money(k.profit.value)],
       ['AOV', money(k.avgOrderValue.value)],
-      [ordersH, number(k.orders.value)],
+      [ordersH, number(live().orders.length)],
     ])
     return { md: tt(lang, 'reports.summary', { period: PERIOD_WORD[lang][key], table }) }
   },
@@ -406,10 +424,14 @@ const suggestions = {
   run: (_q, { user, lang }) => {
     const allow = allowedDomains(user?.role); const k = getKpis(); const s = SUGG(lang)
     const items = []
-    if (allow.includes('inventory')) { const low = getLowStock().length; if (low) items.push(s.lowStock(low)) }
-    if (allow.includes('invoices')) { const unpaid = INVOICES.filter((i) => i.status !== 'Paid').length; if (unpaid) items.push(s.unpaid(unpaid)) }
+    if (allow.includes('inventory')) { const low = liveLowStock().length; if (low) items.push(s.lowStock(low)) }
+    if (allow.includes('invoices')) { const unpaid = live().orders.filter((o) => o.paymentStatus !== 'Paid' && o.status !== 'Cancelled').length; if (unpaid) items.push(s.unpaid(unpaid)) }
     if (allow.includes('sales')) items.push(s.revenue(arrow(k.daily.change), pct(k.daily.change)))
-    if (allow.includes('branches')) items.push(s.branch(getBranchComparison()[0].label))
+    if (allow.includes('branches')) {
+      const ord = live().orders
+      const best = BRANCHES.map((b) => ({ label: b.name, revenue: ord.filter((o) => o.branch === b.id).reduce((sum, o) => sum + o.total, 0) })).sort((a, b) => b.revenue - a.revenue)[0]
+      if (best) items.push(s.branch(best.label))
+    }
     if (allow.includes('warranty')) { const soon = WARRANTIES.filter((w) => { const d = (new Date(w.expires) - Date.now()) / 86400000; return w.status === 'Active' && d >= 0 && d <= 30 }).length; if (soon) items.push(s.warranty(soon)) }
     if (!items.length) items.push(s.healthy())
     return { md: `${tt(lang, 'suggestions.header')}\n\n${items.map((i) => `- ${i}`).join('\n')}` }
