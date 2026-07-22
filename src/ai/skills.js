@@ -16,7 +16,8 @@ import { money, number, formatDate } from '../lib/format.js'
 import { has, extractBrand, extractCategory, extractAmount, extractComparator, isRefinement, extractColor, mdTable } from './nlu.js'
 import { extractSearchTerm } from './lang.js'
 import { tt, sLabel, cLabel, H } from './localize.js'
-import { allowedDomains } from './permissions.js'
+import { allowedDomains, DOMAIN_LABEL } from './permissions.js'
+import { useCrmData } from '../stores/useCrmData.js'
 
 // --- small localized helpers ------------------------------------------------
 const catLoc = (lang, id) => cLabel(lang, id, CATEGORIES.find((c) => c.id === id)?.name)
@@ -106,6 +107,33 @@ const concepts = {
     return asksMeaning && has(q, ...CONCEPT_TERMS)
   },
   run: (q, { lang }) => ({ md: tt(lang, conceptKey(q)) }),
+}
+
+// ---------------------------------------------------------------------------
+// COUNTS — exact "how many X" answers from LIVE data (never guessed/LLM).
+// ---------------------------------------------------------------------------
+const counts = {
+  id: 'counts', domain: 'public',
+  test: (q) =>
+    !has(q, 'today', 'yesterday')
+    && has(q, 'how many', 'number of', 'total number', 'count')
+    && has(q, 'customer', 'client', 'user', 'buyer', 'product', 'item', 'sku', 'catalog', 'order', 'employee', 'staff', 'worker'),
+  run: (q, { lang, user }) => {
+    const d = useCrmData.getState()
+    const allow = allowedDomains(user?.role)
+    const deny = (domain) => ({ md: tt(lang, 'restricted', { role: user?.role || '—', domain: DOMAIN_LABEL[domain] || domain }) })
+
+    if (has(q, 'customer', 'client', 'user', 'buyer')) {
+      return allow.includes('customers') ? { md: tt(lang, 'count.customers', { n: number(d.customers.length) }) } : deny('customers')
+    }
+    if (has(q, 'employee', 'staff', 'worker')) {
+      return allow.includes('employees') ? { md: tt(lang, 'count.employees', { n: number(d.employees.length) }) } : deny('employees')
+    }
+    if (has(q, 'order')) {
+      return allow.includes('orders') ? { md: tt(lang, 'count.orders', { n: number(d.orders.length) }) } : deny('orders')
+    }
+    return allow.includes('products') ? { md: tt(lang, 'count.products', { n: number(d.products.length) }) } : deny('products')
+  },
 }
 
 const sales = {
@@ -452,7 +480,7 @@ function SUGG(lang) {
 }
 
 export const SKILLS = [
-  security, greeting, concepts, help,
+  security, greeting, concepts, help, counts,
   sales, products, inventory, customers, orders, payments, invoices,
   warranty, service, delivery, employees, branches, reports,
   suggestions,

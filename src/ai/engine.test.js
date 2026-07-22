@@ -89,4 +89,20 @@ describe('AI engine', () => {
     const r = runEngine('I want to sell a phone', { user: admin })
     expect(r.md).toMatch(/Create Order/i)
   })
+
+  it('answers "how many customers" from data, never the LLM', () => {
+    const r = runEngine('how many customers do we have?', { user: admin })
+    expect(r.isFallback).toBeFalsy()
+    expect(r.md).toMatch(/customers/i)
+  })
+
+  it('treats "how many users" as a data question (not a general one)', () => {
+    const r = runEngine('nechta user bor', { user: admin })
+    expect(r.isFallback).toBeFalsy()
+  })
+
+  it('flags a truly general question as fallback (routes to the LLM)', () => {
+    const r = runEngine('write me a short poem about the sea', { user: admin })
+    expect(r.isFallback).toBe(true)
+  })
 })

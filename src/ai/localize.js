@@ -304,6 +304,29 @@ const EXTRA = {
 }
 for (const l of ['en', 'uz', 'ru']) Object.assign(T[l], EXTRA[l])
 
+// Exact-count answers (live data), so the AI never guesses these numbers.
+const COUNTS = {
+  en: {
+    'count.customers': (v) => `👥 You currently have **${v.n}** customers.`,
+    'count.products': (v) => `📦 There are **${v.n}** products in the catalog.`,
+    'count.orders': (v) => `🛒 There are **${v.n}** orders in total.`,
+    'count.employees': (v) => `👔 You have **${v.n}** employees.`,
+  },
+  uz: {
+    'count.customers': (v) => `👥 Hozirda sizda **${v.n}** ta mijoz bor.`,
+    'count.products': (v) => `📦 Katalogda **${v.n}** ta mahsulot bor.`,
+    'count.orders': (v) => `🛒 Jami **${v.n}** ta buyurtma bor.`,
+    'count.employees': (v) => `👔 Sizda **${v.n}** ta xodim bor.`,
+  },
+  ru: {
+    'count.customers': (v) => `👥 Сейчас у вас **${v.n}** клиентов.`,
+    'count.products': (v) => `📦 В каталоге **${v.n}** товаров.`,
+    'count.orders': (v) => `🛒 Всего **${v.n}** заказов.`,
+    'count.employees': (v) => `👔 У вас **${v.n}** сотрудников.`,
+  },
+}
+for (const l of ['en', 'uz', 'ru']) Object.assign(T[l], COUNTS[l])
+
 export function tt(lang, key, vars = {}) {
   const fn = T[lang]?.[key] || T.en[key]
   return typeof fn === 'function' ? fn(vars) : key
