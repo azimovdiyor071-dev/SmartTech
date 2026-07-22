@@ -6,7 +6,8 @@
   "description": "SmartTech CRM backend API",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js"
+    "dev": "node --watch index.js",
+    "build": "npm --prefix .. install && npm --prefix .. run build"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
