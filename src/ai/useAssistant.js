@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { getProvider } from './provider.js'
 import { useAuth } from '../stores/useAuth.js'
 import { useI18n } from '../i18n/useI18n.js'
+import { api } from '../services/api.js'
 import { tt } from './localize.js'
 
 const KEY = 'stc.assistant'
@@ -62,6 +63,14 @@ export const useAssistant = create((set, get) => ({
     let answer
     try {
       answer = await getProvider().generate({ query, user, memory: get().memory, appLang, history: get().messages })
+      // Hybrid: CRM questions answered locally; anything else → the real AI (Gemini).
+      if (answer.isFallback) {
+        try {
+          const history = get().messages.slice(-6).map((m) => ({ role: m.role, md: m.md }))
+          const ai = await api.post('/assistant', { query, history })
+          if (ai?.md) answer = { md: ai.md }
+        } catch { /* keep the local fallback message if the AI is unavailable */ }
+      }
     } catch {
       answer = { md: '⚠️ Something went wrong. Please try again.' }
     }

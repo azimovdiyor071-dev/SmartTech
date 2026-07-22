@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import repo, { backendLabel } from './repo/index.js'
 import { requireAuth, register, login, publicUser } from './auth.js'
+import { askGemini } from './assistant.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -44,6 +45,13 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, backend: backendLabel
 app.post('/api/auth/register', wrap(async (req, res) => res.status(201).json(await register(req.body))))
 app.post('/api/auth/login', wrap(async (req, res) => res.json(await login(req.body))))
 app.get('/api/auth/me', requireAuth, (req, res) => res.json({ user: publicUser(req.user) }))
+
+// ---------- AI assistant (general questions via Gemini) ----------
+app.post('/api/assistant', requireAuth, wrap(async (req, res) => {
+  const { query, history } = req.body || {}
+  if (!query || !String(query).trim()) return res.status(400).json({ error: 'Empty query' })
+  res.json(await askGemini(String(query), Array.isArray(history) ? history : []))
+}))
 
 // ---------- bootstrap ----------
 app.get('/api/bootstrap', requireAuth, wrap(async (_req, res) => res.json(await repo.bootstrap())))

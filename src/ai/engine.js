@@ -23,9 +23,10 @@ export function runEngine(rawQuery, ctx = {}) {
   const user = ctx.user || {}
   const lang = resolveLang(raw, memory, ctx.appLang)
 
-  const refusal = () => ({ md: tt(lang, 'refusal'), suggestions: skillSuggest(lang), memory: { lang } })
+  // `fallback` flags an unhandled question — the UI may route it to the LLM.
+  const refusal = (fallback = false) => ({ md: tt(lang, 'refusal'), suggestions: skillSuggest(lang), memory: { lang }, isFallback: fallback })
 
-  if (!raw) return refusal()
+  if (!raw) return refusal(false)
 
   const q = toCanonical(raw)
   const skillCtx = { user, memory: { ...memory, lang }, lang, raw }
@@ -34,7 +35,7 @@ export function runEngine(rawQuery, ctx = {}) {
     try { return s.test(q, skillCtx) } catch { return false }
   })
 
-  if (!skill) return refusal()
+  if (!skill) return refusal(true)
 
   if (!can(user.role, skill.domain)) {
     const label = DOMAIN_LABEL[skill.domain] || skill.domain
