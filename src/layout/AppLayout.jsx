@@ -44,7 +44,11 @@ export default function AppLayout() {
             <div className="spinner" />
           </div>
         ) : (
-          <Outlet />
+          // Key by currency: React Router preserves the Outlet's element across
+          // re-renders, so without this the page keeps the old currency. Remounting
+          // on change re-reads money() with the new rate. (Data lives in the store,
+          // so a remount is cheap and loses no data.)
+          <Outlet key={currency} />
         )}
       </div>
       <Toasts />
