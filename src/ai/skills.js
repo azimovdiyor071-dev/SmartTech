@@ -283,6 +283,15 @@ const customers = {
       const vip = cust.filter((c) => c.segment === 'VIP').sort((a, b) => b.totalSpent - a.totalSpent)
       return { md: tt(lang, 'customers.vip', { count: vip.length, table: mdTable(H(lang, ['customer', 'spent', 'loyalty']), vip.slice(0, 8).map((c) => [c.name, money(c.totalSpent), number(c.loyaltyPoints)])) }) }
     }
+    // "all / list / everyone / names" — return the FULL customer list, not just the top few.
+    const wantsAll = /\b(list|all|everyone|names?)\b/.test(q)
+      || /hamma|barcha|ro['’]?y[hx]at|ismlar|ism[- ]?familiya|ismini|ismlarini|to['’]?liq/.test(raw.toLowerCase())
+      || /список|все|весь|имена|имён/.test(raw.toLowerCase())
+    if (wantsAll) {
+      const all = [...cust].sort((a, b) => b.totalSpent - a.totalSpent)
+      const table = mdTable(H(lang, ['customer', 'phone', 'city', 'spent']), all.map((c) => [c.name, c.phone, c.city, money(c.totalSpent)]))
+      return { md: tt(lang, 'customers.list', { count: all.length, table }), memory: { lastDomain: 'customers' } }
+    }
     const top = [...cust].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 8)
     return { md: tt(lang, 'customers.top', { table: mdTable(H(lang, ['customer', 'segment', 'spent', 'orders']), top.map((c) => [c.name, sLabel(lang, c.segment), money(c.totalSpent), `${c.orders}`])) }), memory: { lastDomain: 'customers' } }
   },

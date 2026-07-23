@@ -29,18 +29,23 @@ export default function LoginPage() {
 
   const submit = async (e) => {
     e.preventDefault()
+    // Mobile keyboards often add a stray space or capital → trim so login just works.
+    const cleanEmail = email.trim().toLowerCase()
+    const cleanPassword = password.trim()
+    setEmail(cleanEmail)
+    setPassword(cleanPassword)
     const errs = {}
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) errs.email = t('emailLabel')
-    if (password.length < 6) errs.password = t('passwordLabel')
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) errs.email = t('emailLabel')
+    if (cleanPassword.length < 6) errs.password = t('passwordLabel')
     setErrors(errs)
     if (Object.keys(errs).length) return
     setSubmitting(true)
     try {
       try {
-        await login({ email, password })
+        await login({ email: cleanEmail, password: cleanPassword })
       } catch {
         // No account yet for this demo role → create one, then we're in.
-        await register({ name: `Demo ${role}`, email, password, role })
+        await register({ name: `Demo ${role}`, email: cleanEmail, password: cleanPassword, role })
       }
       push(`${t('welcomeToast')}, ${tRole(lang, role)}!`, 'success')
       navigate('/')

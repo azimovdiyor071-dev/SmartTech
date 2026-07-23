@@ -29,6 +29,7 @@ export async function requireAuth(req, res, next) {
 
 export async function register({ name, email, password, role }) {
   if (!email || !password) throw Object.assign(new Error('Email and password are required'), { status: 400 })
+  email = String(email).trim()
   const exists = await repo.findUserByEmail(email)
   if (exists) throw Object.assign(new Error('Email already registered'), { status: 409 })
   const count = await repo.countUsers()
@@ -45,7 +46,7 @@ export async function register({ name, email, password, role }) {
 }
 
 export async function login({ email, password }) {
-  const user = await repo.findUserByEmail(email)
+  const user = await repo.findUserByEmail(String(email || '').trim())
   if (!user) throw Object.assign(new Error('Invalid email or password'), { status: 401 })
   const ok = await bcrypt.compare(password, user.passwordHash)
   if (!ok) throw Object.assign(new Error('Invalid email or password'), { status: 401 })
