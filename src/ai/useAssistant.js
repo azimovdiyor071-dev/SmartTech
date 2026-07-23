@@ -60,8 +60,6 @@ export const useAssistant = create((set, get) => ({
     const userMsg = { id: nextId(), role: 'user', md: query || '📷', image: image?.preview }
     set((s) => ({ messages: [...s.messages, userMsg], typing: true }))
 
-    await new Promise((r) => setTimeout(r, 420))
-
     let answer
     try {
       if (image) {

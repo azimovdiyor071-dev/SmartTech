@@ -40,17 +40,25 @@ export async function askGemini(query, history = [], image = null) {
   ]
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`
-  let res
-  try {
-    res = await fetch(url, {
+  const call = (fast) =>
+    fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: SYSTEM }] },
         contents,
-        generationConfig: { temperature: 0.6, maxOutputTokens: 2048 },
+        // Speed first: disable extended "thinking" so the model replies fast.
+        generationConfig: fast
+          ? { temperature: 0.6, maxOutputTokens: 1024, thinkingConfig: { thinkingBudget: 0 } }
+          : { temperature: 0.6, maxOutputTokens: 2048 },
       }),
     })
+
+  let res
+  try {
+    res = await call(true)
+    // If the fast (no-thinking) config isn't supported by this model, retry normally.
+    if (!res.ok && res.status === 400) res = await call(false)
   } catch {
     return { md: '⚠️ Could not reach the AI service. Please try again.' }
   }
@@ -63,6 +71,12 @@ export async function askGemini(query, history = [], image = null) {
   }
 
   const data = await res.json().catch(() => null)
-  const text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim()
+  let text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim()
+  // Rare: no-thinking mode returns empty → retry once with the normal config.
+  if (!text) {
+    const retry = await call(false).catch(() => null)
+    const rdata = retry && retry.ok ? await retry.json().catch(() => null) : null
+    text = rdata?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim()
+  }
   return { md: text || "Sorry, I couldn't come up with an answer." }
 }
