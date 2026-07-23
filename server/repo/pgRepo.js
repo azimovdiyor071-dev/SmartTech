@@ -74,6 +74,14 @@ export async function insertUser(user) {
   await pool.query('INSERT INTO users(id,email,data) VALUES($1,$2,$3)', [user.id, user.email, JSON.stringify(user)])
   return user
 }
+export async function updateUser(id, patch) {
+  const r = await pool.query('SELECT data FROM users WHERE id=$1', [id])
+  const u = r.rows[0]?.data
+  if (!u) return null
+  const next = { ...u, ...patch, id: u.id, email: u.email } // id & email are immutable here
+  await pool.query('UPDATE users SET data=$2 WHERE id=$1', [id, JSON.stringify(next)])
+  return next
+}
 export async function countUsers() {
   const r = await pool.query('SELECT count(*)::int AS n FROM users')
   return r.rows[0].n

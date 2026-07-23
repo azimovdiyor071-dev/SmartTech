@@ -45,6 +45,13 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, backend: backendLabel
 app.post('/api/auth/register', wrap(async (req, res) => res.status(201).json(await register(req.body))))
 app.post('/api/auth/login', wrap(async (req, res) => res.json(await login(req.body))))
 app.get('/api/auth/me', requireAuth, (req, res) => res.json({ user: publicUser(req.user) }))
+app.patch('/api/auth/me', requireAuth, wrap(async (req, res) => {
+  const name = String(req.body?.name || '').trim().slice(0, 60)
+  if (!name) return res.status(400).json({ error: 'Name is required' })
+  const updated = await repo.updateUser(req.user.id, { name })
+  if (!updated) return res.status(404).json({ error: 'User not found' })
+  res.json({ user: publicUser(updated) })
+}))
 
 // ---------- AI assistant (general questions via Gemini) ----------
 app.post('/api/assistant', requireAuth, wrap(async (req, res) => {

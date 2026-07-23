@@ -25,6 +25,13 @@ export async function insertUser(user) {
   save()
   return user
 }
+export async function updateUser(id, patch) {
+  const u = getDb().users.find((x) => x.id === id)
+  if (!u) return null
+  Object.assign(u, patch, { id: u.id, email: u.email }) // id & email are immutable here
+  save()
+  return u
+}
 export async function countUsers() { return getDb().users.length }
 
 // ---- customers ----

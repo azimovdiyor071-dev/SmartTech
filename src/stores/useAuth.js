@@ -41,6 +41,14 @@ export const useAuth = create((set) => ({
     return user
   },
 
+  // Update the signed-in user's display name (shown across the control panel).
+  updateProfile: async ({ name }) => {
+    const { user } = await api.patch('/auth/me', { name })
+    storeUser(user)
+    set({ user })
+    return user
+  },
+
   logout: () => {
     setToken(null)
     storeUser(null)

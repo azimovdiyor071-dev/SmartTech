@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
-import { Cpu, ShieldCheck, BarChart3, Zap, Mail, Lock } from 'lucide-react'
+import { Cpu, ShieldCheck, BarChart3, Zap, Mail, Lock, User } from 'lucide-react'
 import Logo from '../components/Logo.jsx'
 import { useAuth } from '../stores/useAuth.js'
 import { useToast } from '../stores/useToast.js'
@@ -11,12 +11,16 @@ import { ROLES } from '../data/db.js'
 
 const emailForRole = (role) => (role === 'Super Admin' ? 'admin@smarttech.uz' : `${role.toLowerCase().replace(/[^a-z]+/g, '')}@smarttech.uz`)
 
+const NAME_LABEL = { uz: 'Ismingiz', ru: 'Ваше имя', en: 'Your name' }
+const NAME_PLACEHOLDER = { uz: 'Ism familiyangiz', ru: 'Имя и фамилия', en: 'Full name' }
+
 export default function LoginPage() {
-  const { user, login, register } = useAuth()
+  const { user, login, register, updateProfile } = useAuth()
   const navigate = useNavigate()
   const push = useToast((s) => s.push)
   const { t, lang } = useT()
   const setLang = useI18n((s) => s.setLang)
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('admin@smarttech.uz')
   const [password, setPassword] = useState('demo1234')
   const [role, setRole] = useState('Super Admin')
@@ -32,6 +36,7 @@ export default function LoginPage() {
     // Mobile keyboards often add a stray space or capital → trim so login just works.
     const cleanEmail = email.trim().toLowerCase()
     const cleanPassword = password.trim()
+    const cleanName = name.trim().replace(/\s+/g, ' ')
     setEmail(cleanEmail)
     setPassword(cleanPassword)
     const errs = {}
@@ -41,13 +46,18 @@ export default function LoginPage() {
     if (Object.keys(errs).length) return
     setSubmitting(true)
     try {
+      let account
       try {
-        await login({ email: cleanEmail, password: cleanPassword })
+        account = await login({ email: cleanEmail, password: cleanPassword })
       } catch {
-        // No account yet for this demo role → create one, then we're in.
-        await register({ name: `Demo ${role}`, email: cleanEmail, password: cleanPassword, role })
+        // No account yet → create one using the entered name (falls back to the role).
+        account = await register({ name: cleanName || tRole(lang, role), email: cleanEmail, password: cleanPassword, role })
       }
-      push(`${t('welcomeToast')}, ${tRole(lang, role)}!`, 'success')
+      // If the user typed a name, make sure the control panel shows exactly that.
+      if (cleanName && account?.name !== cleanName) {
+        try { account = await updateProfile({ name: cleanName }) } catch { /* keep existing name */ }
+      }
+      push(`${t('welcomeToast')}, ${account?.name || tRole(lang, role)}!`, 'success')
       navigate('/')
     } catch (err) {
       setErrors({ password: err.message })
@@ -83,6 +93,14 @@ export default function LoginPage() {
           <div>
             <h1>{t('signIn')}</h1>
             <p className="page-sub">{t('signInSub')}</p>
+          </div>
+
+          <div className="field">
+            <label>{NAME_LABEL[lang] || NAME_LABEL.en}</label>
+            <div className="search-box" style={{ background: 'var(--surface)' }}>
+              <User size={16} />
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={NAME_PLACEHOLDER[lang] || NAME_PLACEHOLDER.en} />
+            </div>
           </div>
 
           <div className="field">
