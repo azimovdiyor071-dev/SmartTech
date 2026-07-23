@@ -13,8 +13,9 @@ import { money, number, formatDate } from '../lib/format.js'
 import { has, extractBrand, extractCategory, extractAmount, extractComparator, isRefinement, extractColor, mdTable } from './nlu.js'
 import { extractSearchTerm } from './lang.js'
 import { tt, sLabel, cLabel, H } from './localize.js'
-import { allowedDomains, DOMAIN_LABEL } from './permissions.js'
+import { allowedDomains, DOMAIN_LABEL, can } from './permissions.js'
 import { useCrmData } from '../stores/useCrmData.js'
+import { parseAction, confirmMd, matchEntity, norm } from './actions.js'
 
 // --- small localized helpers ------------------------------------------------
 const catLoc = (lang, id) => cLabel(lang, id, CATEGORIES.find((c) => c.id === id)?.name)
@@ -526,8 +527,74 @@ function SUGG(lang) {
   return M[lang] || M.en
 }
 
+// ---------------------------------------------------------------------------
+// ACTIONS — the assistant performs real operations (create order, delete,
+// cancel) after an explicit confirmation. Domain is 'public' so the engine
+// doesn't pre-gate it; the real per-action permission check happens here.
+// ---------------------------------------------------------------------------
+const DOMAIN_OF = { 'order.create': 'orders', 'order.cancel': 'orders', 'customer.delete': 'customers', 'employee.delete': 'employees', 'product.delete': 'products' }
+const actions = {
+  id: 'actions', domain: 'public',
+  test: (_q, ctx) => !!parseAction(ctx?.raw || ''),
+  run: (_q, { raw, lang, user }) => {
+    const d = parseAction(raw)
+    if (!d) return { md: tt(lang, 'refusal'), isFallback: true }
+    if (d.error) return { md: confirmMd(d, lang) } // couldn't resolve — just guide, nothing pending
+    const domain = DOMAIN_OF[d.type] || 'public'
+    if (!can(user?.role, domain)) {
+      return { md: tt(lang, 'restricted', { role: user?.role || '—', domain: DOMAIN_LABEL[domain] || domain }) }
+    }
+    // Ask for confirmation and stash the action; useAssistant runs it on "yes".
+    return { md: confirmMd(d, lang), pendingAction: d, memory: { pendingAction: d } }
+  },
+}
+
+// ---------------------------------------------------------------------------
+// PROFILE — "who is X / tell me about X / how is employee X doing" → a full
+// single-record profile (customer or employee), read from live data.
+// ---------------------------------------------------------------------------
+const PROFILE_INTENT = /(haqida|malumot|ma.lumot|profil|about|who ?is|performance|данн|кто так|как работ|ishla|natija|kimligi|\bkim\b)/
+const profileText = {
+  customer: (lang, c) => {
+    const t = { en: ['orders', 'spent', 'points', 'Last order', 'Joined'], uz: ['buyurtma', 'sarflagan', 'ball', 'Oxirgi buyurtma', "Qo'shilgan"], ru: ['заказов', 'потрачено', 'баллов', 'Последний заказ', 'Регистрация'] }[lang] || {}
+    return `👤 **${c.name}**\n\n- 📞 ${c.phone}\n- 🏙️ ${c.city} · 🏷️ ${sLabel(lang, c.segment)}\n- 🛒 ${c.orders} ${t[0]} · 💰 ${money(c.totalSpent)} ${t[1]}\n- ⭐ ${number(c.loyaltyPoints)} ${t[2]} · ${sLabel(lang, c.status)}\n- 🕐 ${t[3]}: ${c.lastOrder ? formatDate(c.lastOrder) : '—'}\n- 📅 ${t[4]}: ${formatDate(c.joined)}`
+  },
+  employee: (lang, e, rank, total) => {
+    const t = { en: ['Branch', 'Sales', 'Rank', 'of', 'Joined'], uz: ['Filial', 'Savdo', "O'rin", 'dan', "Qo'shilgan"], ru: ['Филиал', 'Продажи', 'Место', 'из', 'Принят'] }[lang] || {}
+    return `👤 **${e.name}** — ${tRoleSafe(lang, e.role)}\n\n- 🏢 ${t[0]}: ${e.branch}\n- 💰 ${t[1]}: ${money(e.sales)}\n- 📊 ${t[2]}: #${rank} ${t[3]} ${total}\n- ${sLabel(lang, e.status)} · 📅 ${t[4]}: ${formatDate(e.joined)}`
+  },
+}
+const tRoleSafe = (lang, role) => { try { return cLabel(lang, role, role) } catch { return role } }
+const profile = {
+  id: 'profile', domain: 'public',
+  test: (_q, ctx) => {
+    const raw = ctx?.raw || ''
+    if (!PROFILE_INTENT.test(norm(raw))) return false
+    const d = live()
+    return !!(matchEntity(raw, d.employees) || matchEntity(raw, d.customers))
+  },
+  run: (_q, { raw, lang, user }) => {
+    const d = live()
+    const wantsEmp = /(hodim|xodim|ishchi|employee|staff|сотрудник|работник)/.test(norm(raw))
+    const emp = matchEntity(raw, d.employees)
+    const cust = matchEntity(raw, d.customers)
+    // Employees are HR data — gate them; customers use the customer domain.
+    if (emp && (wantsEmp || !cust)) {
+      if (!can(user?.role, 'employees')) return { md: tt(lang, 'restricted', { role: user?.role || '—', domain: DOMAIN_LABEL.employees }) }
+      const ranked = [...d.employees].sort((a, b) => (b.sales || 0) - (a.sales || 0))
+      const rank = ranked.findIndex((x) => x.id === emp.id) + 1
+      return { md: profileText.employee(lang, emp, rank, ranked.length), memory: { lastDomain: 'employees' } }
+    }
+    if (cust) {
+      if (!can(user?.role, 'customers')) return { md: tt(lang, 'restricted', { role: user?.role || '—', domain: DOMAIN_LABEL.customers }) }
+      return { md: profileText.customer(lang, cust), memory: { lastDomain: 'customers' } }
+    }
+    return { md: tt(lang, 'refusal'), isFallback: true }
+  },
+}
+
 export const SKILLS = [
-  security, identity, greeting, concepts, help, counts,
+  security, identity, actions, profile, greeting, concepts, help, counts,
   sales, products, inventory, customers, orders, payments, invoices,
   warranty, service, delivery, employees, branches, reports,
   suggestions,

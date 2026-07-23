@@ -4,6 +4,7 @@ import { useAuth } from '../stores/useAuth.js'
 import { useI18n } from '../i18n/useI18n.js'
 import { api } from '../services/api.js'
 import { tt } from './localize.js'
+import { executeAction, isAffirmative, isNegative, cancelledMd } from './actions.js'
 
 const KEY = 'stc.assistant'
 let mid = 0
@@ -51,15 +52,46 @@ export const useAssistant = create((set, get) => ({
     persist(msgs, { lang })
   },
 
+  // Append a bot reply, persist, and clear the "typing" state. When `keepPending`
+  // is false, any awaiting confirmation (memory.pendingAction) is dropped.
+  finish: (md, suggestions, memory, keepPending) => {
+    const mem = { ...memory }
+    if (!keepPending) delete mem.pendingAction
+    const botMsg = { id: nextId(), role: 'assistant', md, suggestions }
+    set((s) => {
+      const messages = [...s.messages, botMsg]
+      persist(messages, mem)
+      return { messages, memory: mem, typing: false }
+    })
+  },
+
   send: async (text, image = null) => {
     const query = (text || '').trim()
     if ((!query && !image) || get().typing) return
 
     const user = useAuth.getState().user || {}
     const appLang = useI18n.getState().lang
+    const lang = get().memory.lang || appLang
     const userMsg = { id: nextId(), role: 'user', md: query || '📷', image: image?.preview }
     set((s) => ({ messages: [...s.messages, userMsg], typing: true }))
 
+    // 1) Confirmation step — an action is waiting for a yes/no.
+    const pending = get().memory.pendingAction
+    if (pending && !image) {
+      if (isAffirmative(query)) {
+        let result
+        try { result = await executeAction(pending, lang) } catch { result = { md: '⚠️ Something went wrong. Please try again.' } }
+        get().finish(result.md, undefined, get().memory, false)
+        return
+      }
+      if (isNegative(query)) {
+        get().finish(cancelledMd(lang), undefined, get().memory, false)
+        return
+      }
+      // Neither yes nor no → treat as a brand-new request (pending cleared below).
+    }
+
+    // 2) Normal flow: local engine (incl. action confirmations) → LLM fallback.
     let answer
     try {
       if (image) {
@@ -82,11 +114,7 @@ export const useAssistant = create((set, get) => ({
     }
 
     const memory = { ...get().memory, ...(answer.memory || {}) }
-    const botMsg = { id: nextId(), role: 'assistant', md: answer.md, suggestions: answer.suggestions }
-    set((s) => {
-      const messages = [...s.messages, botMsg]
-      persist(messages, memory)
-      return { messages, memory, typing: false }
-    })
+    // Keep a freshly-requested action pending; otherwise clear any stale one.
+    get().finish(answer.md, answer.suggestions, memory, !!answer.memory?.pendingAction)
   },
 }))
