@@ -75,13 +75,22 @@ export async function askGemini(query, history = [], image = null) {
       }),
     })
 
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
   let res
   try {
     res = await call(true)
     // If the fast (no-thinking) config isn't supported by this model, retry normally.
     if (!res.ok && res.status === 400) res = await call(false)
+    // Transient hiccups (rate limit / server busy / cold start) — retry a couple
+    // of times with a short backoff before giving up, so users rarely see errors.
+    for (let i = 0; i < 2 && !res.ok && [429, 500, 502, 503].includes(res.status); i++) {
+      await sleep(900 * (i + 1))
+      res = await call(true)
+    }
   } catch {
-    return { md: '⚠️ Could not reach the AI service. Please try again.' }
+    // Network blip — one more try before surfacing an error.
+    await sleep(800)
+    try { res = await call(true) } catch { return { md: '⚠️ Could not reach the AI service. Please try again.' } }
   }
 
   if (!res.ok) {
@@ -100,4 +109,66 @@ export async function askGemini(query, history = [], image = null) {
     text = rdata?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim()
   }
   return { md: text || "Sorry, I couldn't come up with an answer." }
+}
+
+// ---------------------------------------------------------------------------
+// Invoice scanning — read a photo of a paper invoice/receipt and return the
+// line items as structured JSON so the app can add them to the catalogue.
+// ---------------------------------------------------------------------------
+const SCAN_PROMPT = `You are reading a photographed paper invoice or receipt from an
+electronics shop. Extract EVERY product line item you can see. Respond with ONLY a
+JSON array (no prose). Each element:
+{ "name": string, "brand": string, "qty": integer, "price": number, "category": string }
+- price = unit price (if only a line total is shown, divide it by qty).
+- category must be one of: smartphones, laptops, tablets, tvs, watches, accessories, printers, monitors. If unsure use "accessories".
+- brand: best guess from the name, else "".
+If the image is unreadable or has no products, respond with [].`
+
+export async function scanInvoice(image) {
+  const key = process.env.GEMINI_API_KEY
+  if (!key) return { error: 'not_configured' }
+  if (!image?.data) return { error: 'no_image' }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`
+  const body = {
+    contents: [{ role: 'user', parts: [
+      { text: SCAN_PROMPT },
+      { inlineData: { mimeType: image.mimeType || 'image/jpeg', data: image.data } },
+    ] }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 2048, responseMimeType: 'application/json' },
+  }
+
+  let res
+  try {
+    res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  } catch {
+    return { error: 'unreachable' }
+  }
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '')
+    console.error('Gemini scan error', res.status, detail.slice(0, 300))
+    return { error: res.status === 429 ? 'busy' : 'failed' }
+  }
+
+  const data = await res.json().catch(() => null)
+  const raw = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('').trim() || ''
+  let parsed
+  try { parsed = JSON.parse(raw) } catch { parsed = null }
+  if (!Array.isArray(parsed)) {
+    // Be forgiving if the model wrapped the array in prose.
+    const m = raw.match(/\[[\s\S]*\]/)
+    try { parsed = m ? JSON.parse(m[0]) : [] } catch { parsed = [] }
+  }
+  const CATS = ['smartphones', 'laptops', 'tablets', 'tvs', 'watches', 'accessories', 'printers', 'monitors']
+  const items = parsed
+    .filter((it) => it && String(it.name || '').trim())
+    .slice(0, 50)
+    .map((it) => ({
+      name: String(it.name).trim().slice(0, 80),
+      brand: String(it.brand || '').trim().slice(0, 40),
+      qty: Math.max(1, Math.min(9999, parseInt(it.qty, 10) || 1)),
+      price: Math.max(0, Number(it.price) || 0),
+      category: CATS.includes(it.category) ? it.category : 'accessories',
+    }))
+  return { items }
 }

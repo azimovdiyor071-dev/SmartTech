@@ -528,6 +528,95 @@ function SUGG(lang) {
 }
 
 // ---------------------------------------------------------------------------
+// INSIGHTS — real AI-style analysis on demand: compares the last 7 days with
+// the previous 7 from LIVE orders and gives concrete recommendations.
+// ---------------------------------------------------------------------------
+const DAY = 86400000
+function weeklyInsights() {
+  const { orders, products, customers } = live()
+  const now = Date.now()
+  const inRange = (iso, a, b) => { const t = new Date(iso).getTime(); return t >= now - b * DAY && t < now - a * DAY }
+  const active = orders.filter((o) => o.status !== 'Cancelled')
+  const rev = (a, b) => active.filter((o) => inRange(o.createdAt, a, b)).reduce((s, o) => s + (o.total || 0), 0)
+  const revNow = rev(0, 7); const revPrev = rev(7, 14)
+  const qtyBy = (a, b) => {
+    const m = {}
+    for (const o of active) {
+      if (!inRange(o.createdAt, a, b)) continue
+      for (const it of o.items || []) m[it.productId] = (m[it.productId] || 0) + (it.qty || 0)
+    }
+    return m
+  }
+  const nowQ = qtyBy(0, 7); const prevQ = qtyBy(7, 14)
+  const ids = new Set([...Object.keys(nowQ), ...Object.keys(prevQ)])
+  const changes = [...ids].map((id) => {
+    const p = products.find((x) => x.id === id)
+    const cur = nowQ[id] || 0; const prv = prevQ[id] || 0
+    return { name: p?.name || id, cur, prv, diff: cur - prv, pct: prv ? ((cur - prv) / prv) * 100 : (cur ? 100 : 0) }
+  })
+  const declines = changes.filter((c) => c.diff < 0).sort((a, b) => a.diff - b.diff)
+  const rises = changes.filter((c) => c.diff > 0).sort((a, b) => b.diff - a.diff)
+  const low = products.filter((p) => p.stock <= p.reorderLevel).sort((a, b) => a.stock - b.stock)
+  const atRisk = customers.filter((c) => c.orders > 1 && c.lastOrder && now - new Date(c.lastOrder) > 45 * DAY)
+  const revPct = revPrev ? ((revNow - revPrev) / revPrev) * 100 : (revNow ? 100 : 0)
+  return { revNow, revPrev, revPct, declines, rises, low, atRisk, hasData: active.length > 0 }
+}
+
+const INS = {
+  en: {
+    title: '📊 **Business insights — last 7 days**', none: "Not enough recent sales yet. Make a few orders and ask again.",
+    rev: (v, p) => `- 💰 Revenue: **${money(v)}** this week (${p} vs last week)`,
+    drop: (n, p) => `- 📉 **${n}** sales dropped **${p}** — I'd recommend a promo or an ad`,
+    rise: (n, p) => `- 📈 **${n}** is rising **${p}** — keep plenty in stock`,
+    low: (n, names) => `- ⚠️ **${n}** product(s) low on stock (${names}) — reorder soon`,
+    risk: (n) => `- 🔔 **${n}** loyal customer(s) haven't bought in 45+ days — send them an offer`,
+    reco: '💡 **My advice:** ', recoUp: 'Great momentum — reinvest in your best sellers and keep them stocked.',
+    recoDown: 'Sales are cooling — run a short promotion on the slow items and message quiet customers.',
+    recoFlat: 'Steady week — push your top product and refill low stock to grow next week.',
+  },
+  uz: {
+    title: "📊 **Biznes tahlili — oxirgi 7 kun**", none: "Hozircha yetarli savdo yo'q. Bir nechta buyurtma qiling-da, qayta so'rang.",
+    rev: (v, p) => `- 💰 Tushum: bu hafta **${money(v)}** (o'tgan haftaga nisbatan ${p})`,
+    drop: (n, p) => `- 📉 **${n}** sotuvi **${p}** tushdi — reklama yoki chegirma tavsiya qilaman`,
+    rise: (n, p) => `- 📈 **${n}** **${p}** ko'tarilmoqda — omborda yetarli saqlang`,
+    low: (n, names) => `- ⚠️ **${n}** ta mahsulot kam qoldi (${names}) — tez orada to'ldiring`,
+    risk: (n) => `- 🔔 **${n}** ta doimiy mijoz 45+ kundan beri xarid qilmadi — chegirma taklif qiling`,
+    reco: '💡 **Mening maslahatim:** ', recoUp: "Zo'r sur'at — eng ko'p sotilayotganlarga e'tibor bering va omborni to'ldiring.",
+    recoDown: "Savdo sekinlashyapti — sekin ketayotgan tovarlarga aksiya qiling va jim mijozlarga xabar yuboring.",
+    recoFlat: "Barqaror hafta — eng yaxshi mahsulotni reklama qiling va kam qolgan tovarni to'ldiring.",
+  },
+  ru: {
+    title: '📊 **Аналитика — последние 7 дней**', none: 'Пока мало продаж. Сделайте несколько заказов и спросите снова.',
+    rev: (v, p) => `- 💰 Выручка: **${money(v)}** за неделю (${p} к прошлой)`,
+    drop: (n, p) => `- 📉 Продажи **${n}** упали на **${p}** — рекомендую акцию или рекламу`,
+    rise: (n, p) => `- 📈 **${n}** растёт на **${p}** — держите запас`,
+    low: (n, names) => `- ⚠️ **${n}** товар(ов) заканчивается (${names}) — пополните склад`,
+    risk: (n) => `- 🔔 **${n}** постоянных клиента(ов) не покупали 45+ дней — предложите скидку`,
+    reco: '💡 **Мой совет:** ', recoUp: 'Хороший темп — вкладывайтесь в топ-товары и держите их в наличии.',
+    recoDown: 'Продажи замедляются — запустите акцию на медленные товары и напишите «тихим» клиентам.',
+    recoFlat: 'Стабильная неделя — продвигайте топ-товар и пополните склад.',
+  },
+}
+const insights = {
+  id: 'insights', domain: 'reports',
+  test: (q, ctx) => has(q, 'analyze', 'analysis', 'analytics', 'insight', 'advice', 'recommend', 'recommendation')
+    || /tahlil|analiz|maslahat|tavsiya|nima qilay|savdo qanday|umumiy holat|biznes holat/.test((ctx?.raw || '').toLowerCase())
+    || /аналитик|анализ|совет|рекоменд|как дела с продаж/.test((ctx?.raw || '').toLowerCase()),
+  run: (_q, { lang }) => {
+    const L = INS[lang] || INS.en
+    const d = weeklyInsights()
+    if (!d.hasData) return { md: `${L.title}\n\n${L.none}` }
+    const lines = [L.rev(d.revNow, pct(d.revPct))]
+    if (d.declines[0]) lines.push(L.drop(d.declines[0].name, pct(d.declines[0].pct)))
+    if (d.rises[0]) lines.push(L.rise(d.rises[0].name, pct(d.rises[0].pct)))
+    if (d.low.length) lines.push(L.low(d.low.length, d.low.slice(0, 3).map((p) => p.name).join(', ')))
+    if (d.atRisk.length) lines.push(L.risk(d.atRisk.length))
+    const reco = d.revPct > 5 ? L.recoUp : d.revPct < -5 ? L.recoDown : L.recoFlat
+    return { md: `${L.title}\n\n${lines.join('\n')}\n\n${L.reco}${reco}`, memory: { lastDomain: 'reports' } }
+  },
+}
+
+// ---------------------------------------------------------------------------
 // ACTIONS — the assistant performs real operations (create order, delete,
 // cancel) after an explicit confirmation. Domain is 'public' so the engine
 // doesn't pre-gate it; the real per-action permission check happens here.
@@ -594,7 +683,7 @@ const profile = {
 }
 
 export const SKILLS = [
-  security, identity, actions, profile, greeting, concepts, help, counts,
+  security, identity, actions, profile, insights, greeting, concepts, help, counts,
   sales, products, inventory, customers, orders, payments, invoices,
   warranty, service, delivery, employees, branches, reports,
   suggestions,

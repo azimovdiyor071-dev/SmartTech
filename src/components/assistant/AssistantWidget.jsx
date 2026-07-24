@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  Sparkles, X, Trash2, Copy, Send, Bot, Maximize2, Minimize2, Check, ImagePlus,
+  Sparkles, X, Trash2, Copy, Send, Bot, Maximize2, Minimize2, Check, ImagePlus, Mic, Volume2, VolumeX,
 } from 'lucide-react'
 import Markdown from './Markdown.jsx'
 import { useAssistant } from '../../ai/useAssistant.js'
 import { useToast } from '../../stores/useToast.js'
 import { useI18n } from '../../i18n/useI18n.js'
+import { useSpeech } from '../../hooks/useSpeech.js'
 
 // [label, query] — the query is written in the widget language so
 // language detection keeps replies in that language.
@@ -14,19 +15,19 @@ const QUICK_ACTIONS = {
     ["Today's Sales", "today's sales"], ['Monthly Revenue', 'monthly revenue'], ['Orders', 'recent orders'],
     ['Low Stock', 'low stock products'], ['Customers', 'top customers'], ['Best Products', 'best selling products'],
     ['Pending Payments', 'orders awaiting payment'], ['Warranty', 'warranty expiring this week'],
-    ['Best Branch', 'best branch'], ['Insights', 'what should i focus on'],
+    ['Best Branch', 'best branch'], ['Insights', 'give me business insights and advice'],
   ],
   uz: [
     ['Bugungi savdo', 'bugungi savdo'], ['Oylik daromad', 'oylik daromad'], ['Buyurtmalar', "so'nggi buyurtmalar"],
     ['Kam qoldiq', 'kam qolgan mahsulotlar'], ['Mijozlar', 'eng yaxshi mijozlar'], ['Eng ko\'p sotilgan', 'eng ko\'p sotilgan mahsulotlar'],
     ["To'lov kutayotgan", "to'lov kutayotgan buyurtmalar"], ['Kafolat', 'kafolat tugayapti'],
-    ['Eng yaxshi filial', 'eng yaxshi filial'], ['Tahlil', 'menga tavsiya ber'],
+    ['Eng yaxshi filial', 'eng yaxshi filial'], ['Tahlil', 'menga tahlil va tavsiya ber'],
   ],
   ru: [
     ['Продажи сегодня', 'продажи сегодня'], ['Выручка за месяц', 'выручка за месяц'], ['Заказы', 'последние заказы'],
     ['Низкий остаток', 'товары с низким остатком'], ['Клиенты', 'топ клиентов'], ['Хиты продаж', 'самые продаваемые товары'],
     ['Ждут оплаты', 'заказы ожидающие оплаты'], ['Гарантия', 'гарантия истекает на этой неделе'],
-    ['Лучший филиал', 'лучший филиал'], ['Аналитика', 'что мне посоветуешь'],
+    ['Лучший филиал', 'лучший филиал'], ['Аналитика', 'дай аналитику и совет'],
   ],
 }
 
@@ -47,10 +48,32 @@ export default function AssistantWidget() {
   const [attached, setAttached] = useState(null) // { data, mimeType, preview }
   const bodyRef = useRef(null)
   const fileRef = useRef(null)
+  const spokenRef = useRef(null)
+  const { voiceSupported, speakSupported, listening, speakOn, setSpeakOn, speak, listen, stopListening } = useSpeech(lang)
 
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight
   }, [messages, typing, open])
+
+  // Read the newest assistant reply aloud when voice output is on.
+  useEffect(() => {
+    if (!speakOn || typing) return
+    const last = messages[messages.length - 1]
+    if (last && last.role === 'assistant' && last.id !== 'welcome' && last.id !== spokenRef.current) {
+      spokenRef.current = last.id
+      speak(last.md)
+    }
+  }, [messages, typing, speakOn, speak])
+
+  // Tap the mic → transcribe speech → send it (and hear the reply back).
+  const onMic = () => {
+    if (listening) { stopListening(); return }
+    const started = listen((transcript) => {
+      setSpeakOn(true)
+      send(transcript)
+    })
+    if (!started) push(lang === 'uz' ? 'Brauzeringiz ovozni qo\'llab-quvvatlamaydi.' : lang === 'ru' ? 'Браузер не поддерживает голос.' : 'Voice input not supported in this browser.', 'error')
+  }
 
   const onPickImage = (e) => {
     const file = e.target.files?.[0]
@@ -103,6 +126,11 @@ export default function AssistantWidget() {
           </div>
         </div>
         <div className="ai-head-actions">
+          {speakSupported && (
+            <button className={`ai-icon${speakOn ? ' is-on' : ''}`} onClick={() => setSpeakOn(!speakOn)} title={speakOn ? 'Voice replies: on' : 'Voice replies: off'} aria-label="Toggle voice replies">
+              {speakOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+          )}
           <button className="ai-icon" onClick={clear} title={c.clear}><Trash2 size={16} /></button>
           <button className="ai-icon" onClick={toggleMax} title={maximized ? 'Restore' : 'Maximize'}>{maximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
           <button className="ai-icon" onClick={() => setOpen(false)} title="Close"><X size={17} /></button>
@@ -154,10 +182,13 @@ export default function AssistantWidget() {
       <form className="ai-input" onSubmit={submit}>
         <input ref={fileRef} type="file" accept="image/*" onChange={onPickImage} style={{ display: 'none' }} />
         <button type="button" className="ai-icon" onClick={() => fileRef.current?.click()} title="Attach image" aria-label="Attach image"><ImagePlus size={18} /></button>
+        {voiceSupported && (
+          <button type="button" className={`ai-icon${listening ? ' is-rec' : ''}`} onClick={onMic} title={listening ? 'Listening… tap to stop' : 'Speak'} aria-label="Voice input"><Mic size={18} /></button>
+        )}
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={c.placeholder}
+          placeholder={listening ? (lang === 'uz' ? 'Tinglayapman…' : lang === 'ru' ? 'Слушаю…' : 'Listening…') : c.placeholder}
           aria-label="Message the assistant"
         />
         <button type="submit" className="ai-send" disabled={(!input.trim() && !attached) || typing} aria-label="Send"><Send size={17} /></button>

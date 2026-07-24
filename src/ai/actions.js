@@ -47,6 +47,10 @@ const L = {
     notFound: (v) => `🔍 I couldn't find a ${v.kind} matching **"${v.term}"**.`,
     cancelled: `👍 Okay, cancelled — nothing was changed.`,
     failed: `⚠️ Sorry, that action failed. Please try from the page directly.`,
+    importConfirm: (v) => `📄 **Found ${v.count} product(s) on the invoice:**\n\n${v.table}\n\nAdd them to your catalogue? Reply **yes** or **no**.`,
+    importDone: (v) => `✅ Added **${v.n}** product(s) to the catalogue.`,
+    importNone: `🔍 I couldn't read any products from that photo. Try a clearer, well-lit picture of the invoice.`,
+    importHead: ['Product', 'Qty', 'Price'],
     kindCustomer: 'customer', kindEmployee: 'employee', kindProduct: 'product', kindOrder: 'order',
   },
   uz: {
@@ -61,6 +65,10 @@ const L = {
     notFound: (v) => `🔍 **"${v.term}"** bo'yicha ${v.kind} topilmadi.`,
     cancelled: `👍 Xo'p, bekor qildim — hech narsa o'zgartirilmadi.`,
     failed: `⚠️ Kechirasiz, amal bajarilmadi. Iltimos, bo'limning o'zidan qiling.`,
+    importConfirm: (v) => `📄 **Fakturadan ${v.count} ta mahsulot topildi:**\n\n${v.table}\n\nBazaga qo'shilsinmi? **ha** yoki **yo'q** deb yozing.`,
+    importDone: (v) => `✅ **${v.n}** ta mahsulot bazaga qo'shildi.`,
+    importNone: `🔍 Bu rasmdan mahsulotni o'qiy olmadim. Fakturani yorug'roq va aniqroq suratga oling.`,
+    importHead: ['Mahsulot', 'Soni', 'Narx'],
     kindCustomer: 'mijoz', kindEmployee: 'hodim', kindProduct: 'mahsulot', kindOrder: 'buyurtma',
   },
   ru: {
@@ -75,6 +83,10 @@ const L = {
     notFound: (v) => `🔍 ${v.kind} по запросу **«${v.term}»** не найден.`,
     cancelled: `👍 Хорошо, отменил — ничего не изменено.`,
     failed: `⚠️ Извините, действие не выполнено. Попробуйте прямо на странице.`,
+    importConfirm: (v) => `📄 **На накладной найдено ${v.count} товар(ов):**\n\n${v.table}\n\nДобавить в каталог? Ответьте **да** или **нет**.`,
+    importDone: (v) => `✅ Добавлено **${v.n}** товар(ов) в каталог.`,
+    importNone: `🔍 Не удалось распознать товары на фото. Сфотографируйте накладную чётче и при хорошем свете.`,
+    importHead: ['Товар', 'Кол-во', 'Цена'],
     kindCustomer: 'клиент', kindEmployee: 'сотрудник', kindProduct: 'товар', kindOrder: 'заказ',
   },
 }
@@ -155,6 +167,11 @@ export function confirmMd(d, lang) {
   }
   if (d.type === 'order.create') return D.orderConfirm({ customer: d.customerName, qty: d.qty, product: d.productName, total: d.total })
   if (d.type === 'order.cancel') return D.cancelConfirm({ id: d.id, customer: d.customerName })
+  if (d.type === 'products.import') {
+    const rows = d.items.map((it) => `| ${it.name}${it.brand ? ` (${it.brand})` : ''} | ${it.qty} | ${money(it.price)} |`).join('\n')
+    const table = `| ${D.importHead[0]} | ${D.importHead[1]} | ${D.importHead[2]} |\n| --- | --- | --- |\n${rows}`
+    return D.importConfirm({ count: d.items.length, table })
+  }
   const kind = d.type === 'employee.delete' ? D.kindEmployee : d.type === 'product.delete' ? D.kindProduct : D.kindCustomer
   return D.delConfirm({ kind, name: d.name })
 }
@@ -172,6 +189,16 @@ export async function executeAction(d, lang) {
       await store.updateOrder(d.id, { status: 'Cancelled', paymentStatus: 'Pending', deliveryStatus: 'Pending' })
       return { md: D.cancelDone({ id: d.id }) }
     }
+    if (d.type === 'products.import') {
+      let n = 0
+      for (const it of d.items) {
+        try {
+          await store.addProduct({ name: it.name, brand: it.brand || '—', category: it.category, price: it.price, cost: Math.round(it.price * 0.8 * 100) / 100, stock: it.qty })
+          n += 1
+        } catch { /* skip a failed line, keep importing the rest */ }
+      }
+      return { md: D.importDone({ n }) }
+    }
     if (d.type === 'customer.delete') { await store.deleteCustomer(d.id); return { md: D.delDone({ kind: D.kindCustomer, name: d.name }) } }
     if (d.type === 'employee.delete') { await store.deleteEmployee(d.id); return { md: D.delDone({ kind: D.kindEmployee, name: d.name }) } }
     if (d.type === 'product.delete') { await store.deleteProduct(d.id); return { md: D.delDone({ kind: D.kindProduct, name: d.name }) } }
@@ -182,6 +209,12 @@ export async function executeAction(d, lang) {
 }
 
 export const cancelledMd = (lang) => dict(lang).cancelled
+export const importNoneMd = (lang) => dict(lang).importNone
+
+// True when an attached image should be treated as an invoice to scan
+// (rather than a general "what's in this picture?" vision question).
+export const isScanIntent = (raw) =>
+  /(faktura|naklad|skan|scan|invoice|receipt|\bchek\b|накладн|фактур|скан|\bчек\b|qo.?sh|добав|import)/.test(norm(raw))
 
 // yes / no detection for the confirmation step (uz / ru / en).
 // norm() has already lowercased and stripped apostrophes, so match that form.

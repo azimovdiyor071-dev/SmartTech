@@ -4,7 +4,8 @@ import { useAuth } from '../stores/useAuth.js'
 import { useI18n } from '../i18n/useI18n.js'
 import { api } from '../services/api.js'
 import { tt } from './localize.js'
-import { executeAction, isAffirmative, isNegative, cancelledMd } from './actions.js'
+import { executeAction, isAffirmative, isNegative, cancelledMd, isScanIntent, confirmMd, importNoneMd } from './actions.js'
+import { can } from './permissions.js'
 
 const KEY = 'stc.assistant'
 let mid = 0
@@ -94,8 +95,21 @@ export const useAssistant = create((set, get) => ({
     // 2) Normal flow: local engine (incl. action confirmations) → LLM fallback.
     let answer
     try {
-      if (image) {
-        // An image can't be handled locally — send straight to the vision AI.
+      if (image && isScanIntent(query)) {
+        // Invoice photo → extract line items, then confirm before adding them.
+        if (!can(user.role, 'products')) {
+          answer = { md: tt(lang, 'restricted', { role: user.role || '—', domain: 'product' }) }
+        } else {
+          const r = await api.post('/assistant/scan-invoice', { image: { data: image.data, mimeType: image.mimeType } })
+          if (r?.items?.length) {
+            const d = { type: 'products.import', domain: 'products', items: r.items }
+            answer = { md: confirmMd(d, lang), memory: { pendingAction: d } }
+          } else {
+            answer = { md: importNoneMd(lang) }
+          }
+        }
+      } else if (image) {
+        // A general image question → send straight to the vision AI.
         const history = get().messages.slice(-6).map((m) => ({ role: m.role, md: m.md }))
         answer = await api.post('/assistant', { query, history, image: { data: image.data, mimeType: image.mimeType } })
       } else {

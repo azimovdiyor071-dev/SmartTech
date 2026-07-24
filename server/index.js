@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import repo, { backendLabel } from './repo/index.js'
 import { requireAuth, register, login, publicUser } from './auth.js'
-import { askGemini } from './assistant.js'
+import { askGemini, scanInvoice } from './assistant.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -59,6 +59,13 @@ app.post('/api/assistant', requireAuth, wrap(async (req, res) => {
   const hasImage = image && image.data
   if ((!query || !String(query).trim()) && !hasImage) return res.status(400).json({ error: 'Empty query' })
   res.json(await askGemini(String(query || ''), Array.isArray(history) ? history : [], hasImage ? image : null))
+}))
+
+// Read a photographed invoice → structured line items (added after confirmation).
+app.post('/api/assistant/scan-invoice', requireAuth, wrap(async (req, res) => {
+  const { image } = req.body || {}
+  if (!image || !image.data) return res.status(400).json({ error: 'Image required' })
+  res.json(await scanInvoice(image))
 }))
 
 // ---------- bootstrap ----------
