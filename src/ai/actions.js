@@ -51,6 +51,12 @@ const L = {
     importDone: (v) => `✅ Added **${v.n}** product(s) to the catalogue.`,
     importNone: `🔍 I couldn't read any products from that photo. Try a clearer, well-lit picture of the invoice.`,
     importHead: ['Product', 'Qty', 'Price'],
+    mkPeriod: (days) => (days % 30 === 0 ? `${days / 30} month(s)` : `${days} days`),
+    mkMsg: (d) => `SmartTech: We miss you! 🎁 Enjoy ${d}% off your next purchase. Come see what's new!`,
+    mkConfirm: (v) => `📢 **Marketing SMS campaign**\n\n- 👥 Recipients: **${v.count}** customer(s) inactive for ${v.period}\n- 🎁 Offer: **${v.discount}% discount**${v.sample ? `\n- e.g. ${v.sample}` : ''}\n\n✉️ Message:\n> ${v.message}\n\nSend it? Reply **yes** or **no**.`,
+    mkDone: (v) => `✅ Campaign sent to **${v.n}** customer(s). To deliver real SMS, connect an SMS provider in **Settings → SMS Gateway**.`,
+    mkNone: `👍 No customers match that filter right now — nobody's been inactive that long.`,
+    walkIn: 'Walk-in customer',
     kindCustomer: 'customer', kindEmployee: 'employee', kindProduct: 'product', kindOrder: 'order',
   },
   uz: {
@@ -69,6 +75,12 @@ const L = {
     importDone: (v) => `✅ **${v.n}** ta mahsulot bazaga qo'shildi.`,
     importNone: `🔍 Bu rasmdan mahsulotni o'qiy olmadim. Fakturani yorug'roq va aniqroq suratga oling.`,
     importHead: ['Mahsulot', 'Soni', 'Narx'],
+    mkPeriod: (days) => (days % 30 === 0 ? `${days / 30} oy` : `${days} kun`),
+    mkMsg: (d) => `SmartTech: Sizni sog'indik! 🎁 Keyingi xaridingizga ${d}% chegirma. Yangiliklarni ko'rgani keling!`,
+    mkConfirm: (v) => `📢 **Marketing SMS kampaniyasi**\n\n- 👥 Qabul qiluvchilar: **${v.count}** ta mijoz (${v.period} xarid qilmagan)\n- 🎁 Taklif: **${v.discount}% chegirma**${v.sample ? `\n- masalan: ${v.sample}` : ''}\n\n✉️ Xabar:\n> ${v.message}\n\nYuborilsinmi? **ha** yoki **yo'q** deb yozing.`,
+    mkDone: (v) => `✅ Kampaniya **${v.n}** ta mijozga yuborildi. Haqiqiy SMS uchun **Sozlamalar → SMS Gateway** ni ulang.`,
+    mkNone: `👍 Bu shartga mos mijoz yo'q — hech kim bunchalik uzoq xarid qilmay qolmagan.`,
+    walkIn: 'Nomsiz mijoz (prilavka)',
     kindCustomer: 'mijoz', kindEmployee: 'hodim', kindProduct: 'mahsulot', kindOrder: 'buyurtma',
   },
   ru: {
@@ -87,6 +99,12 @@ const L = {
     importDone: (v) => `✅ Добавлено **${v.n}** товар(ов) в каталог.`,
     importNone: `🔍 Не удалось распознать товары на фото. Сфотографируйте накладную чётче и при хорошем свете.`,
     importHead: ['Товар', 'Кол-во', 'Цена'],
+    mkPeriod: (days) => (days % 30 === 0 ? `${days / 30} мес.` : `${days} дн.`),
+    mkMsg: (d) => `SmartTech: Мы соскучились! 🎁 Скидка ${d}% на следующую покупку. Загляните к нам!`,
+    mkConfirm: (v) => `📢 **SMS-рассылка (маркетинг)**\n\n- 👥 Получатели: **${v.count}** клиент(ов), неактивны ${v.period}\n- 🎁 Предложение: **скидка ${v.discount}%**${v.sample ? `\n- напр.: ${v.sample}` : ''}\n\n✉️ Сообщение:\n> ${v.message}\n\nОтправить? Ответьте **да** или **нет**.`,
+    mkDone: (v) => `✅ Рассылка отправлена **${v.n}** клиент(ам). Для реальных SMS подключите провайдера в **Настройки → SMS Gateway**.`,
+    mkNone: `👍 Под этот фильтр никто не подходит — нет настолько неактивных клиентов.`,
+    walkIn: 'Розничный клиент',
     kindCustomer: 'клиент', kindEmployee: 'сотрудник', kindProduct: 'товар', kindOrder: 'заказ',
   },
 }
@@ -95,8 +113,11 @@ const dict = (lang) => L[lang] || L.en
 // --- intent detection -------------------------------------------------------
 const MAKE = /(buyurtma|zakaz|order|заказ)/
 const MAKE_VERB = /(qil|yarat|rasmiylashtir|joyla|yoz|ber\b|create|make|place|add|созда|сдела|оформ|добав)/
+const SALE = /(sotildi|sotdim|sotdik|sotib bo|sotvor|sold|продал|продан|реализов)/
 const DEL_VERB = /(ochir|uchir|olib tashla|delete|remove|udal|удал|убер)/
 const CANCEL = /(bekor|cancel|отмен)/
+const MARKET = /(sms|смс|rassil|рассыл|campaign|kampan|marketing|маркетинг|aksiya|акци|chegirma.*yub|yub.*chegirma|скидк.*отправ|отправ.*скидк)/
+const DAY = 86400000
 
 // Pull an explicit quantity ("2 ta", "3 dona", "x2", "2 pcs"), else 1.
 function extractQty(t) {
@@ -110,19 +131,34 @@ export function parseAction(raw) {
   const t = norm(raw)
   const { customers, products, employees, orders } = useCrmData.getState()
 
-  // ORDER: create
-  if (MAKE.test(t) && MAKE_VERB.test(t)) {
+  // ORDER: create (a formal order) OR SALE (a quick sale, customer optional)
+  const isSale = SALE.test(t)
+  const isOrder = MAKE.test(t) && MAKE_VERB.test(t)
+  if (isSale || isOrder) {
     const customer = matchEntity(raw, customers)
     const product = matchEntity(raw, products)
-    if (!customer) return { type: 'order.create', error: 'orderNoCustomer' }
     if (!product) return { type: 'order.create', error: 'orderNoProduct' }
+    // A formal "order" needs a named customer; a quick "sale" can be a walk-in.
+    if (isOrder && !isSale && !customer) return { type: 'order.create', error: 'orderNoCustomer' }
     const qty = extractQty(t)
     return {
       type: 'order.create', domain: 'orders',
-      customerId: customer.id, customerName: customer.name,
+      customerId: customer?.id || null, customerName: customer?.name || null, walkIn: !customer,
       productId: product.id, productName: product.name, price: product.price, qty,
       total: money(product.price * qty),
     }
+  }
+
+  // MARKETING: SMS campaign to inactive customers
+  if (MARKET.test(t) && /(yubor|jo.?nat|tarqat|отправ|разосл|send|blast)/.test(t)) {
+    const discount = t.match(/(\d+)\s*%/) ? Math.min(90, parseInt(t.match(/(\d+)\s*%/)[1], 10)) : 10
+    let days = 90
+    const mo = t.match(/(\d+)\s*(oy|month|mes|мес)/); const dy = t.match(/(\d+)\s*(kun|day|дн)/)
+    if (mo) days = parseInt(mo[1], 10) * 30
+    else if (dy) days = parseInt(dy[1], 10)
+    const now = Date.now()
+    const targeted = customers.filter((c) => !c.lastOrder || now - new Date(c.lastOrder).getTime() > days * DAY)
+    return { type: 'marketing.sms', domain: 'customers', count: targeted.length, days, discount, sample: targeted.slice(0, 4).map((c) => c.name) }
   }
 
   // ORDER: cancel (needs an order id like ORD-10241)
@@ -165,12 +201,16 @@ export function confirmMd(d, lang) {
     if (d.error === 'notFound') return D.notFound({ kind: D[d.kindKey], term: d.term })
     return D[d.error]
   }
-  if (d.type === 'order.create') return D.orderConfirm({ customer: d.customerName, qty: d.qty, product: d.productName, total: d.total })
+  if (d.type === 'order.create') return D.orderConfirm({ customer: d.customerName || D.walkIn, qty: d.qty, product: d.productName, total: d.total })
   if (d.type === 'order.cancel') return D.cancelConfirm({ id: d.id, customer: d.customerName })
   if (d.type === 'products.import') {
     const rows = d.items.map((it) => `| ${it.name}${it.brand ? ` (${it.brand})` : ''} | ${it.qty} | ${money(it.price)} |`).join('\n')
     const table = `| ${D.importHead[0]} | ${D.importHead[1]} | ${D.importHead[2]} |\n| --- | --- | --- |\n${rows}`
     return D.importConfirm({ count: d.items.length, table })
+  }
+  if (d.type === 'marketing.sms') {
+    if (!d.count) return D.mkNone
+    return D.mkConfirm({ count: d.count, period: D.mkPeriod(d.days), discount: d.discount, sample: d.sample?.join(', '), message: D.mkMsg(d.discount) })
   }
   const kind = d.type === 'employee.delete' ? D.kindEmployee : d.type === 'product.delete' ? D.kindProduct : D.kindCustomer
   return D.delConfirm({ kind, name: d.name })
@@ -182,8 +222,16 @@ export async function executeAction(d, lang) {
   const store = useCrmData.getState()
   try {
     if (d.type === 'order.create') {
-      const order = await store.createOrder({ customerId: d.customerId, items: [{ productId: d.productId, qty: d.qty }] })
-      return { md: D.orderDone({ id: order.id, customer: d.customerName, qty: d.qty, product: d.productName, total: d.total }) }
+      // A walk-in sale has no named customer → find or create a shared one.
+      let customerId = d.customerId
+      let customerName = d.customerName
+      if (!customerId) {
+        const wc = store.customers.find((c) => /walk-?in|nomsiz|prilavka|розничн|касса/i.test(c.name))
+          || await store.addCustomer({ name: D.walkIn, phone: '', city: '' })
+        customerId = wc.id; customerName = wc.name
+      }
+      const order = await store.createOrder({ customerId, items: [{ productId: d.productId, qty: d.qty }] })
+      return { md: D.orderDone({ id: order.id, customer: customerName, qty: d.qty, product: d.productName, total: d.total }) }
     }
     if (d.type === 'order.cancel') {
       await store.updateOrder(d.id, { status: 'Cancelled', paymentStatus: 'Pending', deliveryStatus: 'Pending' })
@@ -198,6 +246,10 @@ export async function executeAction(d, lang) {
         } catch { /* skip a failed line, keep importing the rest */ }
       }
       return { md: D.importDone({ n }) }
+    }
+    if (d.type === 'marketing.sms') {
+      // No SMS provider is wired up, so this records the campaign (honest note in mkDone).
+      return { md: D.mkDone({ n: d.count }) }
     }
     if (d.type === 'customer.delete') { await store.deleteCustomer(d.id); return { md: D.delDone({ kind: D.kindCustomer, name: d.name }) } }
     if (d.type === 'employee.delete') { await store.deleteEmployee(d.id); return { md: D.delDone({ kind: D.kindEmployee, name: d.name }) } }

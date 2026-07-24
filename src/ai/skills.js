@@ -617,11 +617,79 @@ const insights = {
 }
 
 // ---------------------------------------------------------------------------
+// FORECAST — predictive analytics on demand: what's likely to sell next and
+// which loyal customers are at risk of leaving (churn), from LIVE data.
+// ---------------------------------------------------------------------------
+function forecast() {
+  const { orders, products, customers } = live()
+  const now = Date.now()
+  const activeO = orders.filter((o) => o.status !== 'Cancelled')
+  const qtyIn = (days, prev) => {
+    const m = {}
+    for (const o of activeO) {
+      const age = (now - new Date(o.createdAt).getTime()) / DAY
+      const inWin = prev ? (age > days && age <= days + prev) : age <= days
+      if (inWin) for (const it of o.items || []) m[it.productId] = (m[it.productId] || 0) + (it.qty || 0)
+    }
+    return m
+  }
+  const last30 = qtyIn(30); const prev30 = qtyIn(30, 30)
+  const top = products.map((p) => {
+    const cur = last30[p.id] || 0; const prv = prev30[p.id] || 0
+    const momentum = prv ? (cur - prv) / prv : (cur ? 1 : 0)
+    const projected = Math.max(cur, Math.round(cur * (1 + Math.max(-0.5, Math.min(1, momentum)))))
+    return { name: p.name, cur, projected, stock: p.stock, reorder: p.reorderLevel }
+  }).filter((x) => x.cur > 0).sort((a, b) => b.projected - a.projected).slice(0, 3)
+  const churn = customers
+    .filter((c) => c.orders > 1 && c.lastOrder && now - new Date(c.lastOrder).getTime() > 60 * DAY)
+    .sort((a, b) => b.totalSpent - a.totalSpent)
+  return { top, churn: churn.slice(0, 5), churnCount: churn.length, hasData: activeO.length > 0 }
+}
+const FC = {
+  en: {
+    title: '🔮 **Forecast — next 30 days**', none: 'Not enough sales history yet to predict. Come back after more orders.',
+    topH: '**Likely best sellers next month:**', topRow: (v) => `- 📈 **${v.name}** — ~${v.projected} units (${v.cur} sold last 30d)${v.stock <= v.reorder ? ' ⚠️ low stock, reorder' : ''}`,
+    churnH: (n) => `**At risk of leaving (${n}):**`, churnRow: (v) => `- 🔔 **${v.name}** — ${money(v.totalSpent)} lifetime, quiet 60+ days`,
+    churnNone: '✅ No loyal customers are drifting away right now — nice.',
+    advice: '💡 Reorder the top movers early, and win back at-risk customers with a personal offer.',
+  },
+  uz: {
+    title: "🔮 **Bashorat — keyingi 30 kun**", none: "Bashorat uchun hali savdo tarixi kam. Ko'proq buyurtmadan keyin urinib ko'ring.",
+    topH: "**Kelasi oy ko'p sotilishi mumkin:**", topRow: (v) => `- 📈 **${v.name}** — ~${v.projected} dona (oxirgi 30 kunda ${v.cur} ta)${v.stock <= v.reorder ? " ⚠️ kam qoldi, to'ldiring" : ''}`,
+    churnH: (n) => `**Ketib qolish ehtimoli (${n} ta):**`, churnRow: (v) => `- 🔔 **${v.name}** — ${money(v.totalSpent)} umumiy, 60+ kun jim`,
+    churnNone: "✅ Hozircha doimiy mijozlardan hech kim ketayotgani yo'q — zo'r.",
+    advice: "💡 Ko'p ketayotgan tovarni oldindan to'ldiring, ketayotgan mijozlarni shaxsiy taklif bilan qaytaring.",
+  },
+  ru: {
+    title: '🔮 **Прогноз — ближайшие 30 дней**', none: 'Пока мало истории продаж для прогноза. Вернитесь после новых заказов.',
+    topH: '**Вероятные хиты следующего месяца:**', topRow: (v) => `- 📈 **${v.name}** — ~${v.projected} шт (${v.cur} за 30 дней)${v.stock <= v.reorder ? ' ⚠️ мало на складе' : ''}`,
+    churnH: (n) => `**Риск ухода (${n}):**`, churnRow: (v) => `- 🔔 **${v.name}** — ${money(v.totalSpent)} всего, тишина 60+ дней`,
+    churnNone: '✅ Сейчас лояльные клиенты не уходят — отлично.',
+    advice: '💡 Заранее пополните топ-товары и верните уходящих клиентов персональным предложением.',
+  },
+}
+const forecastSkill = {
+  id: 'forecast', domain: 'reports',
+  test: (q, ctx) => has(q, 'forecast', 'predict', 'prediction', 'projection', 'churn')
+    || /bashorat|prognoz|kelasi oy|keyingi oy|kim ketadi|kim ket|tark et|ketib qol/.test((ctx?.raw || '').toLowerCase())
+    || /прогноз|башорат|отток|уйдут|кто уйдёт|следующий месяц|churn/.test((ctx?.raw || '').toLowerCase()),
+  run: (_q, { lang }) => {
+    const L = FC[lang] || FC.en
+    const d = forecast()
+    if (!d.hasData || !d.top.length) return { md: `${L.title}\n\n${L.none}` }
+    const parts = [L.title, '', L.topH, ...d.top.map((t) => L.topRow(t))]
+    parts.push('', d.churnCount ? L.churnH(d.churnCount) : '', ...(d.churnCount ? d.churn.map((c) => L.churnRow(c)) : [L.churnNone]))
+    parts.push('', L.advice)
+    return { md: parts.filter((x) => x !== undefined).join('\n'), memory: { lastDomain: 'reports' } }
+  },
+}
+
+// ---------------------------------------------------------------------------
 // ACTIONS — the assistant performs real operations (create order, delete,
 // cancel) after an explicit confirmation. Domain is 'public' so the engine
 // doesn't pre-gate it; the real per-action permission check happens here.
 // ---------------------------------------------------------------------------
-const DOMAIN_OF = { 'order.create': 'orders', 'order.cancel': 'orders', 'customer.delete': 'customers', 'employee.delete': 'employees', 'product.delete': 'products' }
+const DOMAIN_OF = { 'order.create': 'orders', 'order.cancel': 'orders', 'customer.delete': 'customers', 'employee.delete': 'employees', 'product.delete': 'products', 'marketing.sms': 'customers', 'products.import': 'products' }
 const actions = {
   id: 'actions', domain: 'public',
   test: (_q, ctx) => !!parseAction(ctx?.raw || ''),
@@ -633,6 +701,8 @@ const actions = {
     if (!can(user?.role, domain)) {
       return { md: tt(lang, 'restricted', { role: user?.role || '—', domain: DOMAIN_LABEL[domain] || domain }) }
     }
+    // Nothing to act on (e.g. a campaign that matched zero customers) → no pending.
+    if (d.type === 'marketing.sms' && !d.count) return { md: confirmMd(d, lang) }
     // Ask for confirmation and stash the action; useAssistant runs it on "yes".
     return { md: confirmMd(d, lang), pendingAction: d, memory: { pendingAction: d } }
   },
@@ -683,7 +753,7 @@ const profile = {
 }
 
 export const SKILLS = [
-  security, identity, actions, profile, insights, greeting, concepts, help, counts,
+  security, identity, actions, profile, insights, forecastSkill, greeting, concepts, help, counts,
   sales, products, inventory, customers, orders, payments, invoices,
   warranty, service, delivery, employees, branches, reports,
   suggestions,
