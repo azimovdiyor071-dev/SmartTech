@@ -685,6 +685,72 @@ const forecastSkill = {
 }
 
 // ---------------------------------------------------------------------------
+// IDEAS — the assistant brainstorms concrete growth ideas, grounded in the
+// shop's LIVE situation (low stock, quiet customers, top/slow products), and
+// points to the exact command it can run for you.
+// ---------------------------------------------------------------------------
+function ideaContext() {
+  const { products, customers } = live()
+  const now = Date.now()
+  const low = products.filter((p) => p.stock <= p.reorderLevel).sort((a, b) => a.stock - b.stock)
+  const bySold = [...products].sort((a, b) => (b.sold || 0) - (a.sold || 0))
+  const topSeller = bySold[0]
+  const slow = [...products].filter((p) => p.stock > 0).sort((a, b) => (a.sold || 0) - (b.sold || 0))[0]
+  const quiet = customers.filter((c) => c.orders > 1 && c.lastOrder && now - new Date(c.lastOrder).getTime() > 60 * DAY)
+  const vip = customers.filter((c) => c.segment === 'VIP')
+  return { low, topSeller, slow, quiet, vip }
+}
+const IDEAS = {
+  en: {
+    title: '💡 **Ideas to grow your shop**', intro: "Here's what I'd try, based on your real data:",
+    restock: (names) => `1. **Restock the fast movers** (${names}) before the weekend so you don't miss sales.`,
+    winback: (n) => `2. **Win back ${n} quiet customer(s)** — say: *"send a 10% SMS to customers inactive 3 months"* and I'll do it.`,
+    bundle: (name) => `3. **Bundle "${name}"** (your best seller) with accessories (case, charger) to raise the average sale.`,
+    slow: (name) => `4. **Move slow stock:** put a small discount on **${name}** to free up cash.`,
+    loyalty: '5. **Start a loyalty program** — points on every purchase brings customers back.',
+    close: 'Want me to act on any of these? Just tell me — e.g. *"forecast next month"* or *"give me analytics"*.',
+  },
+  uz: {
+    title: "💡 **Do'koningizni o'stirish g'oyalari**", intro: "Real ma'lumotingizga qarab men shularni tavsiya qilaman:",
+    restock: (names) => `1. **Tez ketayotgan tovarni to'ldiring** (${names}) — dam olish kunlaridan oldin, savdoni boy bermang.`,
+    winback: (n) => `2. **${n} ta jim mijozni qaytaring** — menga: *"3 oyda xarid qilmagan mijozlarga 10% chegirma sms yubor"* deng, bajaraman.`,
+    bundle: (name) => `3. **"${name}"ni to'plam qiling** (eng ko'p sotilgani) — aksessuar (g'ilof, zaryadchi) bilan birga soting, o'rtacha chek oshadi.`,
+    slow: (name) => `4. **Sekin tovarni harakatlantiring:** **${name}**ga kichik chegirma qo'ying, pul aylanadi.`,
+    loyalty: '5. **Sodiqlik dasturi** — har xariddan ball bering, mijoz qaytib keladi.',
+    close: 'Shulardan birini bajaray? Ayting — masalan *"kelasi oy bashorati"* yoki *"menga tahlil ber"*.',
+  },
+  ru: {
+    title: '💡 **Идеи для роста магазина**', intro: 'Вот что я бы попробовал, судя по вашим данным:',
+    restock: (names) => `1. **Пополните ходовые товары** (${names}) до выходных, чтобы не упустить продажи.`,
+    winback: (n) => `2. **Верните ${n} «тихих» клиента(ов)** — скажите: *«отправь SMS со скидкой 10% клиентам без покупок 3 месяца»*, и я сделаю.`,
+    bundle: (name) => `3. **Соберите комплект с «${name}»** (ваш хит) и аксессуарами (чехол, зарядка) — вырастет средний чек.`,
+    slow: (name) => `4. **Разгоните залежавшийся товар:** небольшая скидка на **${name}** освободит деньги.`,
+    loyalty: '5. **Запустите программу лояльности** — баллы за покупки возвращают клиентов.',
+    close: 'Хотите, чтобы я что-то сделал? Скажите — например *«прогноз на следующий месяц»* или *«дай аналитику»*.',
+  },
+}
+const ideas = {
+  id: 'ideas', domain: 'reports',
+  test: (q, ctx) => {
+    const raw = (ctx?.raw || '').toLowerCase()
+    return has(q, 'idea', 'ideas', 'brainstorm', 'suggestion', 'grow', 'improve')
+      || /g['’]?oya|goya|fikr ber|taklif ber|nima qils|qanday o['’]?stir|o['’]?stirsak|rivojlan|ko['’]?paytir/.test(raw)
+      || /иде[ия]|предлож|как вырас|развива|улучш/.test(raw)
+  },
+  run: (_q, { lang }) => {
+    const L = IDEAS[lang] || IDEAS.en
+    const d = ideaContext()
+    const lines = []
+    if (d.low.length) lines.push(L.restock(d.low.slice(0, 3).map((p) => p.name).join(', ')))
+    if (d.quiet.length) lines.push(L.winback(d.quiet.length))
+    if (d.topSeller) lines.push(L.bundle(d.topSeller.name))
+    if (d.slow) lines.push(L.slow(d.slow.name))
+    lines.push(L.loyalty)
+    return { md: `${L.title}\n\n${L.intro}\n\n${lines.join('\n')}\n\n${L.close}`, memory: { lastDomain: 'reports' } }
+  },
+}
+
+// ---------------------------------------------------------------------------
 // ACTIONS — the assistant performs real operations (create order, delete,
 // cancel) after an explicit confirmation. Domain is 'public' so the engine
 // doesn't pre-gate it; the real per-action permission check happens here.
@@ -753,7 +819,7 @@ const profile = {
 }
 
 export const SKILLS = [
-  security, identity, actions, profile, insights, forecastSkill, greeting, concepts, help, counts,
+  security, identity, actions, profile, insights, forecastSkill, ideas, greeting, concepts, help, counts,
   sales, products, inventory, customers, orders, payments, invoices,
   warranty, service, delivery, employees, branches, reports,
   suggestions,
