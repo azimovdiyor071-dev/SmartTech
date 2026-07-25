@@ -114,6 +114,8 @@ const dict = (lang) => L[lang] || L.en
 const MAKE = /(buyurtma|zakaz|order|заказ)/
 const MAKE_VERB = /(qil|yarat|rasmiylashtir|joyla|yoz|ber\b|create|make|place|add|созда|сдела|оформ|добав)/
 const SALE = /(sotildi|sotdim|sotdik|sotib bo|sotvor|sold|продал|продан|реализов)/
+// Questions ("how many sold today?") must NOT be treated as a sale to record.
+const QUESTION = /\?|nechta|qancha|necha ta|qanch|how many|how much|сколько|какие|qaysi|which/
 const DEL_VERB = /(ochir|uchir|olib tashla|delete|remove|udal|удал|убер)/
 const CANCEL = /(bekor|cancel|отмен)/
 const MARKET = /(sms|смс|rassil|рассыл|campaign|kampan|marketing|маркетинг|aksiya|акци|chegirma.*yub|yub.*chegirma|скидк.*отправ|отправ.*скидк)/
@@ -131,8 +133,9 @@ export function parseAction(raw) {
   const t = norm(raw)
   const { customers, products, employees, orders } = useCrmData.getState()
 
-  // ORDER: create (a formal order) OR SALE (a quick sale, customer optional)
-  const isSale = SALE.test(t)
+  // ORDER: create (a formal order) OR SALE (a quick sale, customer optional).
+  // A sale is a statement ("5 sold"); skip it for questions ("how many sold?").
+  const isSale = SALE.test(t) && !QUESTION.test(t)
   const isOrder = MAKE.test(t) && MAKE_VERB.test(t)
   if (isSale || isOrder) {
     const customer = matchEntity(raw, customers)
