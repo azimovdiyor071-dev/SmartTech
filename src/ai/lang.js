@@ -22,6 +22,16 @@ const UZ_MARKERS = [
   'tolov', 'pul', 'soni', 'ismli', 'nomli', 'zo\'r', 'zor', 'kam', 'tugab',
 ]
 
+// Common Uzbek stems matched at a WORD START (so suffixes like "qilaman",
+// "nimalar" still hit) without false positives inside English words
+// ("minimal" must NOT look like "nima"). Kept separate from the substring list.
+const UZ_PREFIX = new RegExp('(^|\\s)(' + [
+  'nima', 'qanday', 'qanaqa', 'qaysi', 'kerak', 'kere', 'yordam', 'salom', 'rahmat',
+  'qil', 'goya', "g'oya", 'fikr', 'maslahat', 'tavsiya', 'tahlil', 'bashorat',
+  'ochir', "o'chir", 'yarat', 'qosh', "qo'sh", 'boladi', "bo'ladi", 'haqida',
+  'kimlar', 'kimni', 'sotildi', 'sotdim', 'bekor', 'royxat', "ro'yxat", 'hamma', 'barcha',
+].join('|') + ')')
+
 function fold(text = '') {
   return text.toLowerCase().replace(/[ʻʼ'`ʾ]/g, "'").replace(/\s+/g, ' ').trim()
 }
@@ -37,6 +47,7 @@ export function detectLang(text = '') {
 
   const uzHits = UZ_MARKERS.filter((w) => t.includes(w)).length
   if (uzHits > 0) return { lang: 'uz', confident: true }
+  if (UZ_PREFIX.test(t)) return { lang: 'uz', confident: true }
 
   // Latin, no Uzbek markers → English. Low confidence for very short inputs
   const words = t.split(' ').length

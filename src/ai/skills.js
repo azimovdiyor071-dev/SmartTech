@@ -734,7 +734,7 @@ const ideas = {
   test: (q, ctx) => {
     const raw = (ctx?.raw || '').toLowerCase()
     return has(q, 'idea', 'ideas', 'brainstorm', 'suggestion', 'grow', 'improve')
-      || /g['’]?oya|goya|fikr ber|taklif ber|nima qils|qanday o['’]?stir|o['’]?stirsak|rivojlan|ko['’]?paytir/.test(raw)
+      || /g['’]?oya|goya|fikr ber|taklif ber|nima qil|nima qilish|nima qilsa|qanday o['’]?stir|o['’]?stirsak|rivojlan|ko['’]?paytir/.test(raw)
       || /иде[ия]|предлож|как вырас|развива|улучш/.test(raw)
   },
   run: (_q, { lang }) => {

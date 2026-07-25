@@ -14,7 +14,10 @@ import { can } from './permissions.js'
 function resolveLang(raw, memory, appLang) {
   const d = detectLang(raw)
   if (d.confident) return d.lang
-  return memory?.lang || appLang || d.lang || 'en'
+  // Not sure from the text → trust the app's UI language (the user's deliberate
+  // choice) before the running conversation language, so a stale memory.lang
+  // (e.g. left at 'en') can't keep answering in the wrong language.
+  return appLang || memory?.lang || d.lang || 'en'
 }
 
 export function runEngine(rawQuery, ctx = {}) {
