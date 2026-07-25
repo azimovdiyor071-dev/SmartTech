@@ -23,8 +23,13 @@ export function matchEntity(text, items) {
   for (const it of items) {
     const name = norm(it.name)
     if (!name) continue
-    if (t.includes(name)) {
-      if (!best || name.length > best.score) best = { it, score: name.length + 100 } // full-name match wins
+    // Full-name match wins. A short single-word name (e.g. "Ali") must sit on a
+    // word boundary so it doesn't match inside an ordinary word ("invalid").
+    const fullMatch = name.length >= 4 || name.includes(' ')
+      ? t.includes(name)
+      : new RegExp(`(^|\\s)${name}(\\s|$)`).test(t)
+    if (fullMatch) {
+      if (!best || name.length + 100 > best.score) best = { it, score: name.length + 100 }
       continue
     }
     for (const w of name.split(' ')) {
@@ -114,8 +119,9 @@ const dict = (lang) => L[lang] || L.en
 const MAKE = /(buyurtma|zakaz|order|заказ)/
 const MAKE_VERB = /(qil|yarat|rasmiylashtir|joyla|yoz|ber\b|create|make|place|add|созда|сдела|оформ|добав)/
 const SALE = /(sotildi|sotdim|sotdik|sotib bo|sotvor|sold|продал|продан|реализов)/
-// Questions ("how many sold today?") must NOT be treated as a sale to record.
-const QUESTION = /\?|nechta|qancha|necha ta|qanch|how many|how much|сколько|какие|qaysi|which/
+// Questions / how-to ("how many sold today?", "how do I create an order?") must
+// NOT be treated as an action to perform — they belong to the info/help skills.
+const QUESTION = /\?|nechta|qancha|necha ta|qanch|qanday|qanaqa|\bhow\b|сколько|\bкак\b|какие|qaysi|which/
 const DEL_VERB = /(ochir|uchir|olib tashla|delete|remove|udal|удал|убер)/
 const CANCEL = /(bekor|cancel|отмен)/
 const MARKET = /(sms|смс|rassil|рассыл|campaign|kampan|marketing|маркетинг|aksiya|акци|chegirma.*yub|yub.*chegirma|скидк.*отправ|отправ.*скидк)/
@@ -134,9 +140,10 @@ export function parseAction(raw) {
   const { customers, products, employees, orders } = useCrmData.getState()
 
   // ORDER: create (a formal order) OR SALE (a quick sale, customer optional).
-  // A sale is a statement ("5 sold"); skip it for questions ("how many sold?").
+  // Both are actions to perform, so skip questions/how-to ("how do I create an
+  // order?", "how many sold?") — those belong to the help/sales skills.
   const isSale = SALE.test(t) && !QUESTION.test(t)
-  const isOrder = MAKE.test(t) && MAKE_VERB.test(t)
+  const isOrder = MAKE.test(t) && MAKE_VERB.test(t) && !QUESTION.test(t)
   if (isSale || isOrder) {
     const customer = matchEntity(raw, customers)
     const product = matchEntity(raw, products)

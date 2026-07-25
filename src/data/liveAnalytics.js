@@ -33,9 +33,10 @@ export function dashboardStats({ orders = [], customers = [], products = [] }) {
   const ydayRev = between(yStart, todayStart).reduce((s, o) => s + (o.total || 0), 0)
   const todaysOrders = between(todayStart, now + 1).length
 
-  // Last 30 days vs the 30 before that
-  const rev30 = revenue(0, 30); const rev60 = revenue(30, 30)
-  const cogs30 = cogs(0, 30); const cogs60 = cogs(30, 30)
+  // Last 30 days vs the 30 before that. inWindow(iso,a,b) = [now-b, now-a),
+  // so the previous 30-day window is (30, 60) — NOT (30, 30) (which is empty).
+  const rev30 = revenue(0, 30); const rev60 = revenue(30, 60)
+  const cogs30 = cogs(0, 30); const cogs60 = cogs(30, 60)
   const profit30 = rev30 - cogs30; const profit60 = rev60 - cogs60
 
   const newCustomers = customers.filter((c) => c.joined && now - at(c.joined) < 30 * DAY).length
