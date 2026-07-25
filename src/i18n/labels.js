@@ -85,6 +85,26 @@ const HEADER = {
   },
 }
 
+// Audit-log action verbs — the log stores canonical English; show it localized.
+const ACTION = {
+  en: {
+    'created order': 'created order', 'updated product': 'updated product', 'processed payment': 'processed payment',
+    'added customer': 'added customer', 'adjusted inventory': 'adjusted inventory', 'assigned courier': 'assigned courier',
+    'logged in': 'logged in', 'generated invoice': 'generated invoice',
+  },
+  uz: {
+    'created order': 'buyurtma yaratdi', 'updated product': 'mahsulotni yangiladi', 'processed payment': "to'lovni qabul qildi",
+    'added customer': "mijoz qo'shdi", 'adjusted inventory': 'omborni o\'zgartirdi', 'assigned courier': 'kuryer biriktirdi',
+    'logged in': 'tizimga kirdi', 'generated invoice': 'hisob-faktura yaratdi',
+  },
+  ru: {
+    'created order': 'создал заказ', 'updated product': 'обновил товар', 'processed payment': 'принял оплату',
+    'added customer': 'добавил клиента', 'adjusted inventory': 'изменил склад', 'assigned courier': 'назначил курьера',
+    'logged in': 'вошёл в систему', 'generated invoice': 'создал счёт',
+  },
+}
+export const tAction = (lang, a) => ACTION[lang]?.[a] || a
+
 export const tStatus = (lang, s) => STATUS[lang]?.[s] || s
 export const tCategory = (lang, id, fallback) => CATEGORY[lang]?.[id] || fallback || id
 export const tRole = (lang, r) => ROLE[lang]?.[r] || r

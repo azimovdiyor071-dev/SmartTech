@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   DollarSign, ShoppingCart, UserPlus, PiggyBank, Receipt, AlertTriangle,
@@ -7,8 +8,8 @@ import PageHeader from '../components/ui/PageHeader.jsx'
 import StatCard from '../components/ui/StatCard.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import LineChart from '../components/charts/LineChart.jsx'
-import { getKpis, getRevenueSeries, getTaskCounts } from '../data/analytics.js'
-import { DAILY } from '../data/db.js'
+import { getTaskCounts } from '../data/analytics.js'
+import { dashboardStats } from '../data/liveAnalytics.js'
 import { useCrmData } from '../stores/useCrmData.js'
 import { money, compactMoney, number } from '../lib/format.js'
 import { useToast } from '../stores/useToast.js'
@@ -22,13 +23,14 @@ export default function Dashboard() {
 
   const orders = useCrmData((s) => s.orders)
   const products = useCrmData((s) => s.products)
+  const customers = useCrmData((s) => s.customers)
 
-  const k = getKpis()
-  const today = DAILY[DAILY.length - 1]
-  const series = getRevenueSeries(30)
+  // Everything below is derived from the live store, so adds/deletes show instantly.
+  const k = useMemo(() => dashboardStats({ orders, customers, products }), [orders, customers, products])
+  const series = k.series
   const lowStock = products.filter((p) => p.stock <= p.reorderLevel).sort((a, b) => a.stock - b.stock)
 
-  // Today's tasks (order/payment counts from live data; delivery/warranty from seed)
+  // Today's tasks (order/payment/delivery from live data; warranty still from seed)
   const taskCounts = getTaskCounts()
   const newOrders = orders.filter((o) => o.status === 'New').length
   const pendingPay = orders.filter((o) => o.paymentStatus !== 'Paid' && o.status !== 'Cancelled').length
@@ -37,7 +39,7 @@ export default function Dashboard() {
   const tasks = [
     { icon: ClipboardList, tone: ['var(--primary-soft)', 'var(--primary)'], label: t('taskNewOrders'), count: newOrders, to: '/orders' },
     { icon: CreditCard, tone: ['var(--warning-soft)', 'var(--warning)'], label: t('taskPendingPay'), count: pendingPay, to: '/payments' },
-    { icon: Truck, tone: ['var(--info-soft)', 'var(--info)'], label: t('taskDeliveries'), count: taskCounts.inTransit, to: '/delivery' },
+    { icon: Truck, tone: ['var(--info-soft)', 'var(--info)'], label: t('taskDeliveries'), count: k.inTransit, to: '/delivery' },
     { icon: ShieldAlert, tone: ['var(--danger-soft)', 'var(--danger)'], label: t('taskWarranty'), count: taskCounts.warrantySoon, to: '/warranty' },
   ]
 
@@ -59,7 +61,7 @@ export default function Dashboard() {
       {/* KPI row — 6 cards */}
       <div className="grid grid-kpi">
         <StatCard label={t('todaysSales')} value={money(k.daily.value)} change={k.daily.change} hint={t('vsYesterday')} icon={DollarSign} tone="indigo" />
-        <StatCard label={t('todaysOrders')} value={number(today.orders)} hint={t('vsYesterday')} icon={ShoppingCart} tone="blue" />
+        <StatCard label={t('todaysOrders')} value={number(k.todaysOrders)} hint={t('vsYesterday')} icon={ShoppingCart} tone="blue" />
         <StatCard label={t('newCustomers')} value={number(k.newCustomers)} hint="30d" icon={UserPlus} tone="green" />
         <StatCard label={t('netProfit')} value={money(k.profit.value)} change={k.profit.change} hint={t('vsLastMonth')} icon={PiggyBank} tone="violet" />
         <StatCard label={t('expenses')} value={money(k.expenses.value)} change={k.expenses.change} hint={t('vsLastMonth')} icon={Receipt} tone="amber" invertTrend />
@@ -70,7 +72,7 @@ export default function Dashboard() {
       <div className="card" style={{ marginTop: 16 }}>
         <div className="card-head">
           <h3>{t('salesChart')}</h3>
-          <span className="muted">{money(k.monthly.value)}</span>
+          <span className="muted">{money(k.monthly)}</span>
         </div>
         <div className="card-pad">
           <LineChart

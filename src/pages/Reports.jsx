@@ -8,7 +8,7 @@ import { compactMoney, timeAgo, money, number } from '../lib/format.js'
 import { openPrintWindow, reportHtml, downloadCSV } from '../lib/exporters.js'
 import { useToast } from '../stores/useToast.js'
 import { useT } from '../i18n/useI18n.js'
-import { th } from '../i18n/labels.js'
+import { th, tAction } from '../i18n/labels.js'
 
 export default function Reports() {
   const push = useToast((s) => s.push)
@@ -49,7 +49,7 @@ export default function Reports() {
 
   const logCols = [
     { key: 'user', header: th(lang, 'user'), sortable: true, render: (l) => <b>{l.user}</b> },
-    { key: 'action', header: th(lang, 'action'), sortable: true },
+    { key: 'action', header: th(lang, 'action'), sortable: true, render: (l) => tAction(lang, l.action) },
     { key: 'target', header: th(lang, 'target'), render: (l) => <span className="cell-muted">{l.target}</span> },
     { key: 'ip', header: th(lang, 'ip'), render: (l) => <span className="cell-muted">{l.ip}</span> },
     { key: 'time', header: th(lang, 'when'), sortable: true, sortValue: (l) => new Date(l.time).getTime(), render: (l) => <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center' }}><Clock size={12} /> {timeAgo(l.time)}</span> },
