@@ -9,6 +9,7 @@ import { dirname, join } from 'path'
 import repo, { backendLabel } from './repo/index.js'
 import { requireAuth, register, login, publicUser } from './auth.js'
 import { askGemini, scanInvoice } from './assistant.js'
+import { authorize } from './permissions.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const app = express()
@@ -73,51 +74,51 @@ app.get('/api/bootstrap', requireAuth, wrap(async (_req, res) => res.json(await 
 
 // ---------- customers ----------
 app.get('/api/customers', requireAuth, wrap(async (_req, res) => res.json(await repo.listCustomers())))
-app.post('/api/customers', requireAuth, wrap(async (req, res) => {
+app.post('/api/customers', requireAuth, authorize('customers'), wrap(async (req, res) => {
   if (!req.body?.name?.trim()) return res.status(400).json({ error: 'Name is required' })
   res.status(201).json(await repo.insertCustomer(req.body))
 }))
-app.patch('/api/customers/:id', requireAuth, wrap(async (req, res) => {
+app.patch('/api/customers/:id', requireAuth, authorize('customers'), wrap(async (req, res) => {
   const c = await repo.updateCustomer(req.params.id, req.body)
   if (!c) return res.status(404).json({ error: 'Customer not found' })
   res.json(c)
 }))
-app.delete('/api/customers/:id', requireAuth, wrap(async (req, res) => { await repo.deleteCustomer(req.params.id); res.json({ ok: true }) }))
+app.delete('/api/customers/:id', requireAuth, authorize('customers'), wrap(async (req, res) => { await repo.deleteCustomer(req.params.id); res.json({ ok: true }) }))
 
 // ---------- products ----------
 app.get('/api/products', requireAuth, wrap(async (_req, res) => res.json(await repo.listProducts())))
-app.post('/api/products', requireAuth, wrap(async (req, res) => {
+app.post('/api/products', requireAuth, authorize('products'), wrap(async (req, res) => {
   if (!req.body?.name?.trim()) return res.status(400).json({ error: 'Name is required' })
   res.status(201).json(await repo.insertProduct(req.body))
 }))
-app.patch('/api/products/:id', requireAuth, wrap(async (req, res) => {
+app.patch('/api/products/:id', requireAuth, authorize('products'), wrap(async (req, res) => {
   const p = await repo.updateProduct(req.params.id, req.body)
   if (!p) return res.status(404).json({ error: 'Product not found' })
   res.json(p)
 }))
-app.delete('/api/products/:id', requireAuth, wrap(async (req, res) => { await repo.deleteProduct(req.params.id); res.json({ ok: true }) }))
+app.delete('/api/products/:id', requireAuth, authorize('products'), wrap(async (req, res) => { await repo.deleteProduct(req.params.id); res.json({ ok: true }) }))
 
 // ---------- employees ----------
 app.get('/api/employees', requireAuth, wrap(async (_req, res) => res.json(await repo.listEmployees())))
-app.post('/api/employees', requireAuth, wrap(async (req, res) => {
+app.post('/api/employees', requireAuth, authorize('employees'), wrap(async (req, res) => {
   if (!req.body?.name?.trim()) return res.status(400).json({ error: 'Name is required' })
   res.status(201).json(await repo.insertEmployee(req.body))
 }))
-app.patch('/api/employees/:id', requireAuth, wrap(async (req, res) => {
+app.patch('/api/employees/:id', requireAuth, authorize('employees'), wrap(async (req, res) => {
   const e = await repo.updateEmployee(req.params.id, req.body)
   if (!e) return res.status(404).json({ error: 'Employee not found' })
   res.json(e)
 }))
-app.delete('/api/employees/:id', requireAuth, wrap(async (req, res) => { await repo.deleteEmployee(req.params.id); res.json({ ok: true }) }))
+app.delete('/api/employees/:id', requireAuth, authorize('employees'), wrap(async (req, res) => { await repo.deleteEmployee(req.params.id); res.json({ ok: true }) }))
 
 // ---------- orders ----------
 app.get('/api/orders', requireAuth, wrap(async (_req, res) => res.json(await repo.listOrders())))
-app.post('/api/orders', requireAuth, wrap(async (req, res) => {
+app.post('/api/orders', requireAuth, authorize('orders'), wrap(async (req, res) => {
   const { order, error } = await repo.createOrder(req.body, req.user.name)
   if (error) return res.status(400).json({ error })
   res.status(201).json(order)
 }))
-app.patch('/api/orders/:id', requireAuth, wrap(async (req, res) => {
+app.patch('/api/orders/:id', requireAuth, authorize('orders'), wrap(async (req, res) => {
   const o = await repo.updateOrder(req.params.id, req.body)
   if (!o) return res.status(404).json({ error: 'Order not found' })
   res.json(o)
