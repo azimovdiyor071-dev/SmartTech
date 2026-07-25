@@ -3,10 +3,12 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import App from './App.jsx'
 import { useAuth } from './stores/useAuth.js'
 import { useCrmData } from './stores/useCrmData.js'
+import { useI18n } from './i18n/useI18n.js'
 
 describe('SmartTech CRM', () => {
   beforeEach(() => {
     localStorage.clear()
+    useI18n.setState({ lang: 'en' }) // assertions below are in English
     useAuth.setState({ user: null })
     useCrmData.setState({ customers: [], products: [], orders: [], status: 'idle', error: null })
   })

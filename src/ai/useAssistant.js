@@ -33,7 +33,7 @@ const persist = (messages, memory) => {
 }
 
 const saved = load()
-const initialLang = (typeof localStorage !== 'undefined' && localStorage.getItem('stc.lang')) || 'en'
+const initialLang = (typeof localStorage !== 'undefined' && localStorage.getItem('stc.lang')) || 'uz'
 
 export const useAssistant = create((set, get) => ({
   open: false,

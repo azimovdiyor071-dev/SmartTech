@@ -2,9 +2,9 @@ import { create } from 'zustand'
 import { DICTS } from './dictionaries.js'
 
 function initialLang() {
-  if (typeof window === 'undefined') return 'en'
+  if (typeof window === 'undefined') return 'uz'
   const saved = localStorage.getItem('stc.lang')
-  return ['en', 'uz', 'ru'].includes(saved) ? saved : 'en'
+  return ['en', 'uz', 'ru'].includes(saved) ? saved : 'uz' // Uzbek-first product
 }
 
 export const useI18n = create((set, get) => ({

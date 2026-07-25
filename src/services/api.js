@@ -50,3 +50,9 @@ export const api = {
   patch: (path, body) => request('PATCH', path, body),
   del: (path) => request('DELETE', path),
 }
+
+// Wake the backend early (free hosts sleep when idle) so the first real
+// request — login or bootstrap — isn't stuck behind a cold start.
+export function warmUp() {
+  try { fetch(`${API_BASE}/api/health`, { cache: 'no-store' }).catch(() => {}) } catch { /* ignore */ }
+}
