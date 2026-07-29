@@ -17,10 +17,14 @@ const UZ_MARKERS = [
   'bugun', 'kecha', 'savdo', 'sotuv', 'sotil', 'zakaz', 'buyurtma', 'ombor', 'sklad',
   'mijoz', 'klient', 'telefon', "ko'rsat", 'korsat', 'hisobot', 'solishtir', 'taqqosla',
   'filial', 'nechta', 'qancha', 'necha', 'qoldi', 'qoldiq', 'xodim', 'ishchi', 'mahsulot',
-  'tovar', 'foyda', 'daromad', 'tushum', 'kafolat', 'yetkaz', 'mavjud', 'faqat', 'eng',
+  'tovar', 'foyda', 'daromad', 'tushum', 'kafolat', 'yetkaz', 'mavjud', 'faqat',
   'yaxshi', 'oylik', 'haftalik', 'yillik', 'qidir', 'izla', 'arzon', 'qimmat', "to'lov",
-  'tolov', 'pul', 'soni', 'ismli', 'nomli', 'zo\'r', 'zor', 'kam', 'tugab',
+  'tolov', 'soni', 'ismli', 'nomli', 'zo\'r', 'tugab',
 ]
+
+// Short Uzbek words that are substrings of common English words ("eng" in
+// length/engine, "pul" in popular/pull, "kam" in camera). Match as whole words.
+const UZ_EXACT = /(^|\s)(eng|pul|kam|zor)(\s|$)/
 
 // Common Uzbek stems matched at a WORD START (so suffixes like "qilaman",
 // "nimalar" still hit) without false positives inside English words
@@ -47,7 +51,7 @@ export function detectLang(text = '') {
 
   const uzHits = UZ_MARKERS.filter((w) => t.includes(w)).length
   if (uzHits > 0) return { lang: 'uz', confident: true }
-  if (UZ_PREFIX.test(t)) return { lang: 'uz', confident: true }
+  if (UZ_PREFIX.test(t) || UZ_EXACT.test(t)) return { lang: 'uz', confident: true }
 
   // Latin, no Uzbek markers → English. Low confidence for very short inputs
   const words = t.split(' ').length

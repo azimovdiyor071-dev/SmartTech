@@ -60,6 +60,7 @@ const HEADER = {
     technician: 'Technician', delivery: 'Delivery', courier: 'Courier', address: 'Address', eta: 'ETA',
     employee: 'Employee', role: 'Role', branch: 'Branch', phone: 'Phone', sales: 'Sales', revenue: 'Revenue',
     user: 'User', action: 'Action', target: 'Target', ip: 'IP Address', when: 'When', name: 'Name', company: 'Company',
+    brand: 'Brand', metric: 'Metric', value: 'Value',
   },
   uz: {
     customer: 'Mijoz', city: 'Shahar', segment: 'Segment', orders: 'Buyurtmalar', totalSpent: 'Jami sarflagan',
@@ -71,6 +72,7 @@ const HEADER = {
     technician: 'Usta', delivery: 'Yetkazish', courier: 'Kuryer', address: 'Manzil', eta: 'Muddat',
     employee: 'Xodim', role: 'Lavozim', branch: 'Filial', phone: 'Telefon', sales: 'Savdo', revenue: 'Daromad',
     user: 'Foydalanuvchi', action: 'Amal', target: 'Obyekt', ip: 'IP manzil', when: 'Qachon', name: 'Ism', company: 'Kompaniya',
+    brand: 'Brend', metric: 'Ko\'rsatkich', value: 'Qiymat',
   },
   ru: {
     customer: 'Клиент', city: 'Город', segment: 'Сегмент', orders: 'Заказы', totalSpent: 'Всего потрачено',
@@ -82,6 +84,7 @@ const HEADER = {
     technician: 'Мастер', delivery: 'Доставка', courier: 'Курьер', address: 'Адрес', eta: 'Срок',
     employee: 'Сотрудник', role: 'Роль', branch: 'Филиал', phone: 'Телефон', sales: 'Продажи', revenue: 'Выручка',
     user: 'Пользователь', action: 'Действие', target: 'Объект', ip: 'IP адрес', when: 'Когда', name: 'Имя', company: 'Компания',
+    brand: 'Бренд', metric: 'Показатель', value: 'Значение',
   },
 }
 

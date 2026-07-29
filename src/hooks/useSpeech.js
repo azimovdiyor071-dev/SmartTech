@@ -29,6 +29,12 @@ export function useSpeech(lang = 'en') {
     if (!speakOn && canSpeak) window.speechSynthesis.cancel()
   }, [speakOn])
 
+  // Stop any live recognition / speech when the widget unmounts (e.g. on logout).
+  useEffect(() => () => {
+    try { recRef.current?.stop() } catch { /* noop */ }
+    if (canSpeak) window.speechSynthesis.cancel()
+  }, [])
+
   const speak = useCallback((md) => {
     if (!canSpeak) return
     const text = plain(md)

@@ -46,7 +46,11 @@ export function dashboardStats({ orders = [], customers = [], products = [] }) {
   for (let i = 29; i >= 0; i--) {
     const from = startOfDay(i); const to = startOfDay(i - 1)
     const dayRev = between(from, to).reduce((s, o) => s + (o.total || 0), 0)
-    series.push({ label: new Date(from).toISOString().slice(5, 10), revenue: Math.round(dayRev) })
+    // Label from LOCAL date parts (buckets are local days) — toISOString would
+    // shift the label a day in every UTC+ timezone (e.g. Tashkent UTC+5).
+    const d = new Date(from)
+    const label = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    series.push({ label, revenue: Math.round(dayRev) })
   }
 
   return {

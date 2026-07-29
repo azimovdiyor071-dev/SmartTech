@@ -125,9 +125,24 @@ export async function createOrder(payload, repName) {
   return { order }
 }
 export async function updateOrder(id, patch) {
-  const o = getDb().orders.find((x) => x.id === id)
+  const db = getDb()
+  const o = db.orders.find((x) => x.id === id)
   if (!o) return null
+  const nowCancelling = o.status !== 'Cancelled' && patch.status === 'Cancelled'
   Object.assign(o, patch, { id })
+  if (nowCancelling) {
+    // Reverse the stock / sold / customer rollup that createOrder applied.
+    for (const it of o.items || []) {
+      const p = db.products.find((x) => x.id === it.productId)
+      if (p) { p.stock += it.qty; p.sold = Math.max(0, p.sold - it.qty); p.status = productStatus(p) }
+    }
+    const c = db.customers.find((x) => x.id === o.customerId)
+    if (c) {
+      c.orders = Math.max(0, c.orders - 1)
+      c.totalSpent = round2(Math.max(0, c.totalSpent - o.total))
+      c.loyaltyPoints = Math.max(0, c.loyaltyPoints - Math.round(o.total / 10))
+    }
+  }
   save()
   return o
 }

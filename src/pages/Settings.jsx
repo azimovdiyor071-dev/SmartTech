@@ -8,6 +8,7 @@ import { useToast } from '../stores/useToast.js'
 import { useCurrency, CURRENCIES } from '../stores/useCurrency.js'
 
 const CURRENCY_LABEL = { USD: 'USD ($)', UZS: "UZS (so'm)", RUB: 'RUB (₽)' }
+const FISCAL_MONTH = { en: { jan: 'January', apr: 'April' }, uz: { jan: 'Yanvar', apr: 'Aprel' }, ru: { jan: 'Январь', apr: 'Апрель' } }
 
 export default function Settings() {
   const push = useToast((s) => s.push)
@@ -79,7 +80,7 @@ export default function Settings() {
                 </div>
                 <div className="field"><label>{t('taxRate')}</label><input className="input" type="number" defaultValue={12} /></div>
                 <div className="field"><label>{t('invoicePrefix')}</label><input className="input" defaultValue="INV-" /></div>
-                <div className="field"><label>{t('fiscalYear')}</label><select className="select"><option>January</option><option>April</option></select></div>
+                <div className="field"><label>{t('fiscalYear')}</label><select className="select"><option>{FISCAL_MONTH[lang]?.jan || 'January'}</option><option>{FISCAL_MONTH[lang]?.apr || 'April'}</option></select></div>
               </div>
             </>
           )}

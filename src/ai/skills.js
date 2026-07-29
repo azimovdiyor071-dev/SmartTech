@@ -6,9 +6,8 @@
 // Engine picks the first matching skill after a permission check.
 // ============================================================
 import {
-  WARRANTIES, SERVICE_REQUESTS, DELIVERIES, CATEGORIES, DAILY, BRANCHES,
+  WARRANTIES, SERVICE_REQUESTS, DELIVERIES, CATEGORIES, BRANCHES,
 } from '../data/db.js'
-import { getKpis } from '../data/analytics.js'
 import { money, number, formatDate } from '../lib/format.js'
 import { has, extractBrand, extractCategory, extractAmount, extractComparator, isRefinement, extractColor, mdTable } from './nlu.js'
 import { extractSearchTerm } from './lang.js'
@@ -21,13 +20,46 @@ import { parseAction, confirmMd, matchEntity, norm } from './actions.js'
 const catLoc = (lang, id) => cLabel(lang, id, CATEGORIES.find((c) => c.id === id)?.name)
 const pct = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`
 const arrow = (n) => (n >= 0 ? '📈' : '📉')
-const todayRow = () => DAILY[DAILY.length - 1]
 
 // Live data (from the backend-backed store) so the AI matches what the app shows.
 const live = () => useCrmData.getState()
 const isToday = (iso) => { try { return new Date(iso).toDateString() === new Date().toDateString() } catch { return false } }
 const liveLowStock = () => live().products.filter((p) => p.stock <= p.reorderLevel).sort((a, b) => a.stock - b.stock)
 const liveTopProducts = (n) => [...live().products].sort((a, b) => b.sold - a.sold).slice(0, n).map((p) => ({ ...p, revenue: Math.round(p.sold * p.price) }))
+
+// Sales/revenue/profit computed from LIVE orders so the AI matches the app
+// (was previously reading a frozen seed via getKpis/DAILY).
+const DAYMS = 86400000
+function liveSales() {
+  const { orders, products } = live()
+  const now = Date.now()
+  const active = orders.filter((o) => o.status !== 'Cancelled')
+  const at = (iso) => new Date(iso).getTime()
+  const costOf = (it) => { const p = products.find((x) => x.id === it.productId); const u = p && p.cost != null ? p.cost : (it.price || 0) * 0.8; return u * (it.qty || 0) }
+  const win = (a, b) => active.filter((o) => { const t = at(o.createdAt); return t >= now - b * DAYMS && t < now - a * DAYMS })
+  const rev = (a, b) => win(a, b).reduce((s, o) => s + (o.total || 0), 0)
+  const cogs = (a, b) => win(a, b).reduce((s, o) => s + (o.items || []).reduce((ss, it) => ss + costOf(it), 0), 0)
+  const units = (a, b) => win(a, b).reduce((s, o) => s + (o.items || []).reduce((ss, it) => ss + (it.qty || 0), 0), 0)
+  const startOfDay = (d = 0) => { const x = new Date(); x.setHours(0, 0, 0, 0); return x.getTime() - d * DAYMS }
+  const between = (from, to) => active.filter((o) => { const t = at(o.createdAt); return t >= from && t < to })
+  const pc = (c, p) => (p ? ((c - p) / p) * 100 : (c ? 100 : 0))
+  const tStart = startOfDay(0); const yStart = startOfDay(1)
+  const todayOrders = between(tStart, now + 1)
+  const todayRev = todayOrders.reduce((s, o) => s + (o.total || 0), 0)
+  const ydayRev = between(yStart, tStart).reduce((s, o) => s + (o.total || 0), 0)
+  const todayProfit = todayRev - todayOrders.reduce((s, o) => s + (o.items || []).reduce((ss, it) => ss + costOf(it), 0), 0)
+  const r30 = rev(0, 30); const r60 = rev(30, 60); const c30 = cogs(0, 30); const c60 = cogs(30, 60)
+  const o30 = win(0, 30).length; const o60 = win(30, 60).length
+  const aov = (r, o) => Math.round(r / Math.max(o, 1))
+  const box = (v, p) => ({ value: Math.round(v), prev: Math.round(p), change: pc(v, p) })
+  return {
+    daily: box(todayRev, ydayRev), todayOrders: todayOrders.length, todayProfit: Math.round(todayProfit),
+    weekly: box(rev(0, 7), rev(7, 14)), monthly: box(r30, r60), yearly: box(rev(0, 365), rev(365, 730)),
+    yearlyRevenueTotal: Math.round(rev(0, 365)),
+    profit: box(r30 - c30, r60 - c60), expenses: box(c30, c60), units: box(units(0, 30), units(30, 60)),
+    avgOrderValue: { value: aov(r30, o30), prev: aov(r60, o60), change: pc(aov(r30, o30), aov(r60, o60)) },
+  }
+}
 
 const CMP_WORD = {
   en: { gt: 'more than', lt: 'less than' },
@@ -162,7 +194,7 @@ const sales = {
     has(q, 'sales', 'revenue', 'profit', 'expense', 'income', 'turnover', 'average order', 'aov', 'products sold', 'units sold', 'sold') ||
     (has(q, 'compare') && has(q, 'today', 'yesterday', 'month', 'week', 'year')),
   run: (q, { lang }) => {
-    const k = getKpis(); const t = todayRow()
+    const k = liveSales(); const t = { orders: k.todayOrders, profit: k.todayProfit }
     if (has(q, 'expense')) return { md: tt(lang, 'sales.expenses', { v: money(k.expenses.value), arrow: arrow(k.expenses.change), pct: pct(k.expenses.change) }) }
     if (has(q, 'profit')) return { md: tt(lang, 'sales.profit', { v: money(k.profit.value), arrow: arrow(k.profit.change), pct: pct(k.profit.change), today: money(t.profit) }) }
     if (has(q, 'products sold', 'units sold')) return { md: tt(lang, 'sales.units', { v: number(k.units.value), arrow: arrow(k.units.change), pct: pct(k.units.change) }) }
@@ -429,7 +461,7 @@ const reports = {
   id: 'reports', domain: 'reports',
   test: (q) => has(q, 'report', 'summary'),
   run: (q, { lang }) => {
-    const k = getKpis()
+    const k = liveSales()
     const key = has(q, 'year') ? 'Yearly' : has(q, 'quarter') ? 'Quarterly' : has(q, 'week') ? 'Weekly' : has(q, 'today', 'daily') ? 'Daily' : 'Monthly'
     const [revenueH, ordersH] = H(lang, ['revenue', 'orders'])
     const profitH = { en: 'Net profit', uz: 'Sof foyda', ru: 'Чистая прибыль' }[lang] || 'Net profit'
@@ -448,7 +480,7 @@ const suggestions = {
   id: 'suggestions', domain: 'public',
   test: (q) => has(q, 'suggestion', 'insight', 'recommend', 'what should i', 'alerts', 'advice', 'analyze', 'focus'),
   run: (_q, { user, lang }) => {
-    const allow = allowedDomains(user?.role); const k = getKpis(); const s = SUGG(lang)
+    const allow = allowedDomains(user?.role); const k = liveSales(); const s = SUGG(lang)
     const items = []
     if (allow.includes('inventory')) { const low = liveLowStock().length; if (low) items.push(s.lowStock(low)) }
     if (allow.includes('invoices')) { const unpaid = live().orders.filter((o) => o.paymentStatus !== 'Paid' && o.status !== 'Cancelled').length; if (unpaid) items.push(s.unpaid(unpaid)) }

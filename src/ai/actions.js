@@ -142,7 +142,7 @@ export function parseAction(raw) {
   // ORDER: create (a formal order) OR SALE (a quick sale, customer optional).
   // Both are actions to perform, so skip questions/how-to ("how do I create an
   // order?", "how many sold?") — those belong to the help/sales skills.
-  const isSale = SALE.test(t) && !QUESTION.test(t)
+  const isSale = SALE.test(t) && !QUESTION.test(t) && !/sold out|out of stock|tugadi|tugagan|qolmadi/.test(t)
   const isOrder = MAKE.test(t) && MAKE_VERB.test(t) && !QUESTION.test(t)
   if (isSale || isOrder) {
     const customer = matchEntity(raw, customers)
@@ -155,12 +155,13 @@ export function parseAction(raw) {
       type: 'order.create', domain: 'orders',
       customerId: customer?.id || null, customerName: customer?.name || null, walkIn: !customer,
       productId: product.id, productName: product.name, price: product.price, qty,
-      total: money(product.price * qty),
+      // Server adds 12% tax, so report the tax-inclusive total the order will have.
+      total: money(Math.round(product.price * qty * 1.12 * 100) / 100),
     }
   }
 
   // MARKETING: SMS campaign to inactive customers
-  if (MARKET.test(t) && /(yubor|jo.?nat|tarqat|отправ|разосл|send|blast)/.test(t)) {
+  if (MARKET.test(t) && !QUESTION.test(t) && /(yubor|jo.?nat|tarqat|отправ|разосл|send|blast)/.test(t)) {
     const discount = t.match(/(\d+)\s*%/) ? Math.min(90, parseInt(t.match(/(\d+)\s*%/)[1], 10)) : 10
     let days = 90
     const mo = t.match(/(\d+)\s*(oy|month|mes|мес)/); const dy = t.match(/(\d+)\s*(kun|day|дн)/)
@@ -172,7 +173,7 @@ export function parseAction(raw) {
   }
 
   // ORDER: cancel (needs an order id like ORD-10241)
-  if (CANCEL.test(t) && MAKE.test(t)) {
+  if (CANCEL.test(t) && MAKE.test(t) && !QUESTION.test(t)) {
     const idm = raw.match(/ord[-\s]?(\d{3,})/i)
     const id = idm ? `ORD-${idm[1]}` : null
     const order = id ? orders.find((o) => o.id.toLowerCase() === id.toLowerCase()) : null
@@ -180,8 +181,8 @@ export function parseAction(raw) {
     return { type: 'order.cancel', domain: 'orders', id: order.id, customerName: order.customerName }
   }
 
-  // DELETE: customer / employee / product
-  if (DEL_VERB.test(t)) {
+  // DELETE: customer / employee / product ("how do I delete…?" is a question, skip)
+  if (DEL_VERB.test(t) && !QUESTION.test(t)) {
     const isEmp = /(hodim|xodim|ishchi|employee|staff|сотрудник|работник)/.test(t)
     const isProd = /(mahsulot|tovar|product|товар|item)/.test(t)
     const isCust = /(mijoz|klient|customer|client|покупател)/.test(t)

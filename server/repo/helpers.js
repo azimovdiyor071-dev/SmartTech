@@ -73,7 +73,8 @@ export function mergeProduct(existing, patch) {
 // Build an order object + its line items from raw input. Pure — the caller
 // persists the order and applies the stock/customer side-effects.
 export function assembleOrder({ customer, products, items, discountPct = 0, paymentMethod = 'Cash', paymentStatus = 'Pending', branch = 'b1', repName, orderId }) {
-  const built = (items || []).map(({ productId, qty }) => {
+  if (!Array.isArray(items)) return null
+  const built = items.map(({ productId, qty }) => {
     const p = products.find((x) => x.id === productId)
     if (!p) return null
     const q = Math.max(1, Number(qty) || 1)
@@ -81,8 +82,10 @@ export function assembleOrder({ customer, products, items, discountPct = 0, paym
   }).filter(Boolean)
   if (built.length === 0) return null
 
+  // Clamp the discount to 0..100 and never let a bad value make totals negative/NaN.
+  const pct = Math.min(100, Math.max(0, Number(discountPct) || 0))
   const subtotal = round2(built.reduce((s, it) => s + it.total, 0))
-  const discount = round2(subtotal * (Number(discountPct) / 100))
+  const discount = round2(subtotal * (pct / 100))
   const tax = round2((subtotal - discount) * 0.12)
   const total = round2(subtotal - discount + tax)
 

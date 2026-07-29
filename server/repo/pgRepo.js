@@ -188,6 +188,42 @@ export async function createOrder(payload, repName) {
   }
 }
 export async function updateOrder(id, patch) {
-  const r = await pool.query('UPDATE orders SET data = data || $2::jsonb WHERE id=$1 RETURNING data', [id, JSON.stringify({ ...patch, id })])
-  return r.rows[0]?.data || null
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    const cur = await client.query('SELECT data FROM orders WHERE id=$1 FOR UPDATE', [id])
+    if (!cur.rows.length) { await client.query('ROLLBACK'); return null }
+    const prev = cur.rows[0].data
+    const nowCancelling = prev.status !== 'Cancelled' && patch.status === 'Cancelled'
+    const next = { ...prev, ...patch, id }
+    await client.query('UPDATE orders SET data=$2 WHERE id=$1', [id, JSON.stringify(next)])
+
+    if (nowCancelling) {
+      // Reverse the stock / sold / customer rollup that createOrder applied.
+      for (const it of next.items || []) {
+        const pr = await client.query('SELECT data FROM products WHERE id=$1 FOR UPDATE', [it.productId])
+        if (pr.rows.length) {
+          const p = pr.rows[0].data
+          p.stock += it.qty
+          p.sold = Math.max(0, (p.sold || 0) - it.qty)
+          p.status = productStatus(p)
+          await client.query('UPDATE products SET data=$2 WHERE id=$1', [p.id, JSON.stringify(p)])
+        }
+      }
+      const cr = await client.query('SELECT data FROM customers WHERE id=$1 FOR UPDATE', [next.customerId])
+      if (cr.rows.length) {
+        const c = cr.rows[0].data
+        c.orders = Math.max(0, (c.orders || 0) - 1)
+        c.totalSpent = round2(Math.max(0, (c.totalSpent || 0) - next.total))
+        c.loyaltyPoints = Math.max(0, (c.loyaltyPoints || 0) - Math.round(next.total / 10))
+        await client.query('UPDATE customers SET data=$2 WHERE id=$1', [c.id, JSON.stringify(c)])
+      }
+    }
+    await client.query('COMMIT')
+    return next
+  } catch (e) {
+    await client.query('ROLLBACK'); throw e
+  } finally {
+    client.release()
+  }
 }
