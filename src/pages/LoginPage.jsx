@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { Cpu, ShieldCheck, BarChart3, Zap, Mail, Lock, User } from 'lucide-react'
 import Logo from '../components/Logo.jsx'
@@ -8,8 +8,11 @@ import { useI18n, useT } from '../i18n/useI18n.js'
 import { LANGS } from '../i18n/dictionaries.js'
 import { tRole } from '../i18n/labels.js'
 import { ROLES } from '../data/db.js'
+import { warmUp } from '../services/api.js'
 
 const emailForRole = (role) => (role === 'Super Admin' ? 'admin@smarttech.uz' : `${role.toLowerCase().replace(/[^a-z]+/g, '')}@smarttech.uz`)
+// Shown if sign-in is slow — the free server may be waking from sleep.
+const WAKING = { uz: '⏳ Server ishga tushyapti, biroz kuting…', ru: '⏳ Сервер запускается, подождите…', en: '⏳ Waking the server, please wait…' }
 
 const NAME_LABEL = { uz: 'Ismingiz', ru: 'Ваше имя', en: 'Your name' }
 const NAME_PLACEHOLDER = { uz: 'Ism familiyangiz', ru: 'Имя и фамилия', en: 'Full name' }
@@ -26,6 +29,11 @@ export default function LoginPage() {
   const [role, setRole] = useState('Super Admin')
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [waking, setWaking] = useState(false)
+
+  // Start waking the (possibly asleep) backend the moment the login page opens,
+  // so it's ready by the time the user submits.
+  useEffect(() => { warmUp() }, [])
 
   if (user) return <Navigate to="/" replace />
 
@@ -45,6 +53,8 @@ export default function LoginPage() {
     setErrors(errs)
     if (Object.keys(errs).length) return
     setSubmitting(true)
+    // If the request drags on, it's almost certainly a cold start — reassure the user.
+    const wakeTimer = setTimeout(() => setWaking(true), 4000)
     try {
       let account
       try {
@@ -62,7 +72,9 @@ export default function LoginPage() {
     } catch (err) {
       setErrors({ password: err.message })
     } finally {
+      clearTimeout(wakeTimer)
       setSubmitting(false)
+      setWaking(false)
     }
   }
 
@@ -133,6 +145,7 @@ export default function LoginPage() {
           </div>
 
           <button type="submit" className="btn btn-primary" disabled={submitting} style={{ width: '100%', padding: 11 }}>{submitting ? '…' : t('signIn')}</button>
+          {waking && <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-2)' }}>{WAKING[lang] || WAKING.en}</div>}
           <div style={{ textAlign: 'center' }}>
             <a href="#forgot" onClick={(e) => { e.preventDefault(); push(t('resetSent'), 'info') }} style={{ color: 'var(--primary)', fontSize: 13, fontWeight: 600 }}>
               {t('forgotPassword')}
