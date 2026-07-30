@@ -8,6 +8,7 @@ import AssistantWidget from '../components/assistant/AssistantWidget.jsx'
 import { useAuth } from '../stores/useAuth.js'
 import { useCrmData } from '../stores/useCrmData.js'
 import { useCurrency } from '../stores/useCurrency.js'
+import { warmUp } from '../services/api.js'
 
 export default function AppLayout() {
   const user = useAuth((s) => s.user)
@@ -21,6 +22,14 @@ export default function AppLayout() {
   useEffect(() => {
     if (user && status === 'idle') load()
   }, [user, status, load])
+
+  // While the app is open, ping the backend every 10 min so it stays awake
+  // (a second layer alongside the scheduled keep-alive) — keeps the CRM snappy
+  // during the working day.
+  useEffect(() => {
+    const id = setInterval(() => warmUp(), 10 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [])
 
   if (!user) return <Navigate to="/login" replace />
 
